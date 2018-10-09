@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"outDir": "./app",
+		"target": "es6",
+		"moduleResolution": "node",
+		"module": "commonjs",
+		"noImplicitAny": false,
+		"removeComments": true,
+		"sourceMap": true,
+		"jsx": "react",
+		"jsxFactory": "h"
+	},
+	"suppressImplicitAnyIndexErrors": true,
+	"lib": [
+		"dom",
+		"es2015"
+	],
+	"baseUrl": ".",
+	"exclude": [
+		"dist"
+	]
+}

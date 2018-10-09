@@ -1,0 +1,90 @@
+html,body {
+    background-color:#0665a2;
+    color:#fff;
+    font-family: arial;
+    font-weight: 300;
+}
+
+audio {
+width: 100%;
+}
+
+.plSel,
+.plSel:hover {
+    background-color:rgba(44, 226, 226, 0.1);
+    color:#fff;
+    cursor:default !important;
+}
+
+a[id^="btn"] {
+    border-radius:3px;
+    color:#fff;
+    cursor:pointer;
+    display:inline-block;
+    font-size:2rem;
+    line-height:.8;
+    margin: 0 5px;
+    padding: 5px 10px;
+    text-decoration:none;
+    transition:background .3s ease;
+    border:1px solid;
+}
+    
+a[id^="btn"]:hover,
+a[id^="btn"]:active {
+    background-color:rgba(0,0,0,.5);
+    color:#fff;
+}
+
+@media only screen and (max-width:850px) {
+    #nowPlay { display:none; }
+}
+
+#player {
+  z-index: 1;
+  position:fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color:#0665a2;
+  
+  padding-top: 20px;
+  box-shadow: 0 0 3px cyan;
+
+}
+
+#playControls {
+    display: flex;
+}
+
+.playlist {
+    border: 0;
+    border-spacing: 0 0;
+}
+
+.playlist td {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* duration */
+.playlist td:nth-child(3) {
+    text-align: right;
+}
+
+.playlist tr:hover {
+background-color:rgba(0,0,0,.1);
+}
+
+#vol_slider {
+    flex-grow: 1;
+}
+
+#playControls {
+    margin-bottom: 20px;
+
+}
+
+.playlist-filter {
+    width: 40em;
+}
