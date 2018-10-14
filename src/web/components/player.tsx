@@ -2,16 +2,7 @@ import {h, Component } from "preact";
 import { getTracks } from "../api";
 import "../player.scss"
 import { shuffle } from "../utils";
-
-interface TrackInfo {
-    index: number;
-    trackNumber: number;
-    name: string;
-    duration: string;
-    title: string;
-    artist: string;
-    url: string;
-}
+import {TrackInfo} from '../../common/track'
 
 interface PlaylistProps {
     tracks: TrackInfo[];

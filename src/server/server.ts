@@ -2,7 +2,8 @@
 var express = require('express');
 import * as socketio from 'socket.io';
 import { ApiCalls } from '../common/api_calls';
-import * as fs from 'fs'
+import { Tracks } from './database';
+import { initializeDatabase } from './find_tracks';
 
 const app = express();
 const port = 5555;
@@ -15,10 +16,12 @@ var io = socketio(server);
 server.listen(port);
 console.log(`listening on port ${port}`);
 
+initializeDatabase();
+
 io.on('connection', function (socket) {
     socket.emit('hello', { hello: 'some data' });
 
   socket.on(ApiCalls.listTracks, function (filters, fn) {
-    fn(JSON.parse(fs.readFileSync('data/tracks.json', 'utf8')));
+    Tracks.all().then(fn);
   });
 });

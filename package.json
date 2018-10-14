@@ -38,6 +38,7 @@
     "webpack-dev-server": "^3.1.9"
   },
   "dependencies": {
+    "@types/sequelize": "^4.27.28",
     "express": "^4.16.3",
     "reflect-metadata": "^0.1.12",
     "sequelize": "^4.39.0",
