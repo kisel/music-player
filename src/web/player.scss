@@ -68,7 +68,7 @@ a[id^="btn"]:active {
 }
 
 /* duration */
-.playlist td:nth-child(3) {
+.playlist td:nth-child(4) {
     text-align: right;
 }
 
@@ -88,3 +88,18 @@ background-color:rgba(0,0,0,.1);
 .playlist-filter {
     width: 40em;
 }
+
+.rating-stars {
+    float: right;
+    color: yellow;
+    transition: color 350ms;
+
+    &:hover {
+        color: green;
+    }
+
+    > a:hover ~ a{
+        color: yellow;
+    }
+}
+

@@ -5,4 +5,7 @@
 *.ts text
 *.tsx text
 *.html text
+*.css text
+*.sass text
+*.scss text
 

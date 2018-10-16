@@ -1,9 +1,15 @@
 import * as Sequelize from 'sequelize';
 import { TrackInfo } from '../common/track';
 
+export function getDatabaseStorage() {
+  return process.env['DATABASE'] || 'data/database.sqlite';
+}
+
 export const sequelize = new Sequelize('music', 'music', 'music', {
     dialect: 'sqlite',
     operatorsAliases: Sequelize.Op, // use Sequelize.Op
+
+    //logging: false,
 
     pool: {
       max: 5,
@@ -20,7 +26,7 @@ export const sequelize = new Sequelize('music', 'music', 'music', {
   } as any,
 
     // SQLite only
-    storage: 'data/database.sqlite'
+    storage: getDatabaseStorage()
   }as any);
   
 export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
@@ -28,8 +34,9 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   title: Sequelize.STRING,
   name: Sequelize.STRING,
   rating: Sequelize.INTEGER,
-  duration: Sequelize.STRING,
-  url: Sequelize.STRING,
+  duration: Sequelize.INTEGER,
+  path: Sequelize.STRING,
+  meta: Sequelize.JSON,
 }, {
     charset: 'utf8',
     collate: 'utf8_unicode_ci'

@@ -2,10 +2,12 @@ var webpack = require("webpack");
 var WebpackDevServer = require("webpack-dev-server");
 var _ = require('lodash')
 
-var backend_host = process.env.BACKEND || 'localhost:5555';
-var backend_http_url = 'http://' + backend_host;
-var backend_ws_url = 'ws://' + backend_host + '/';
-var port = 8080;
+var backend_port = parseInt(process.env.PORT || '5555');
+var webpack_port = parseInt(process.env.WEBPACK_PORT || '8080');
+
+var backend_ws_url = 'ws://localhost:' + backend_port + '/';
+var backend_http_url = 'http://localhost:' + backend_port;
+
 var config = require("../webpack.config.js");
 
 console.log("Connecting front-end to " + backend_http_url);
@@ -14,7 +16,7 @@ console.log("Connecting front-end to " + backend_http_url);
 var frontEndEntry = config[0];
 var entry = frontEndEntry.entry;
 
-entry['webpack_client'] =  "webpack-dev-server/client?http://localhost:" + port + "/";
+entry['webpack_client'] =  "webpack-dev-server/client?http://localhost:" + webpack_port + "/";
 entry['webpack_hot'] = "webpack/hot/dev-server";
 //entry['react_hot'] = "react-hot-loader/patch";
 
@@ -80,9 +82,9 @@ var server = new WebpackDevServer(compiler, {
   stats: { colors: true }
 });
 
-var base_url = "http://localhost:" + port;
+var base_url = "http://localhost:" + webpack_port;
 
-server.listen(port, function() {
+server.listen(webpack_port, function() {
     console.log("Available entry routes:");
     console.log(base_url + "/");
     console.log(base_url + "/webpack-dev-server/");

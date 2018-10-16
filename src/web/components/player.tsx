@@ -1,8 +1,9 @@
 import {h, Component } from "preact";
-import { getTracks } from "../api";
+import { getTracks, setTrackRating } from "../api";
 import "../player.scss"
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
+import debounce = require('lodash/debounce');
 
 interface PlaylistProps {
     tracks: TrackInfo[];
@@ -15,17 +16,32 @@ declare var MediaMetadata: any;
 function matchTrack(pattern: string, track: TrackInfo) {
 
 }
+
+function formatDuration(duration: number) {
+    const sec = Math.floor(duration);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (s < 10) {
+        return `${m}:0${s}`;
+    } else {
+        return `${m}:${s}`;
+    }
+}
+
 export class Player extends Component {
     state = {
         tracks: [] as TrackInfo[],
         currentTrack: 0,
-        trackInfo: {} as TrackInfo,
         playlistFilter: "",
     }
     audio: any = null;
 
     constructor() {
         super();
+        this.fetchTracks();
+    }
+
+    fetchTracks = () => {
         getTracks().then((tracks) => {
             console.log(tracks);
             this.setState({ tracks })
@@ -40,9 +56,37 @@ export class Player extends Component {
         }
         const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
-        this.setState({currentTrack: idx, trackInfo});
+        this.setState({currentTrack: idx});
+        console.log("playing", trackInfo);
         audio.play();
         this.updateMediaSession();
+    }
+
+    setRating = (trackInfo: TrackInfo, newRating: number) => {
+        const newTracks = this.state.tracks.map(track => {
+            if (trackInfo.id === track.id) {
+                return {...track, rating: newRating};
+            } else {
+                return track;
+            }
+        });
+        this.setState({tracks: newTracks});
+        setTrackRating({...trackInfo, rating: newRating}).then((res)=>{
+            console.log("Rating changed", res);
+        });
+    }
+
+    renderRating(trackInfo: TrackInfo) {
+        const rating = trackInfo.rating || 0;
+        let res = [];
+        for (let i=1; i<=5; ++i) {
+            res.push(<a key={i} onClick={() => this.setRating(trackInfo, i)}>{(i <= rating) ? "\u2605" : "\u2606"}</a>);
+        }
+        return (
+            <div class="rating-stars">
+                {res}
+            </div>
+        )
     }
 
     renderPlaylist() {
@@ -50,14 +94,15 @@ export class Player extends Component {
         return (
             <table class="playlist">
                 {tracks.map((trackInfo, index) => {
-                    const {artist, name, duration} = trackInfo;
+                    const {artist, title, duration, rating} = trackInfo;
                     const {currentTrack} = this.state;
-                    if (!playlistFilter || (artist && artist.search(playlistFilter) >= 0) || (name && name.search(playlistFilter) >= 0)) {
+                    if (!playlistFilter || (artist && artist.search(playlistFilter) >= 0) || (title && title.search(playlistFilter) >= 0)) {
                         return (
-                            <tr key={index} class={(currentTrack == index) ? "plSel" : undefined} onClick={() => this.playTrack(index)}>
+                            <tr key={index} class={(currentTrack == index) ? "plSel" : undefined}>
                                 <td>{index + 1} </td>
-                                <td>{name}</td>
-                                <td>{duration}</td>
+                                <td onClick={() => this.playTrack(index)}>{artist}-{title}</td>
+                                <td>{this.renderRating(trackInfo)}</td>
+                                <td>{formatDuration(duration)}</td>
                             </tr>
                         );
                     } else {
@@ -163,26 +208,35 @@ export class Player extends Component {
         this.audio = audio;
     }
 
-    playlistFilterChange = ({target: {value}}: any) => {
+    _playlistFilterChange = ({target: {value}}: any) => {
         this.setState({playlistFilter: value})
     }
+    playlistFilterChange = debounce(this._playlistFilterChange, 500);
+
+    renderNowPlay() {
+        const trackInfo = this.getCurrentTrack();
+        return (
+            <div id="nowPlay">
+                {
+                    trackInfo
+                        ? <span id="npTitle">{trackInfo.index + 1} {trackInfo.artist}-{trackInfo.title}</span>
+                        : <span id="npTitle">-</span>
+                }
+                {trackInfo ? this.renderRating(trackInfo) : null}
+            </div>
+        );
+    }
+
 
     render() {
         //<a id="btnLoadAll" onClick={this.loadAll}>ALL</a>
-        const {trackInfo, playlistFilter} = this.state;
+        const {playlistFilter} = this.state;
         return (
         <div class="container">
                 {this.renderPlaylist()}
                 <div id="player">
                     <div class="wrapper">
-                        <div id="nowPlay">
-                        {
-                            trackInfo
-                            ? <span id="npTitle">{trackInfo.index + 1} {trackInfo.artist}-{trackInfo.title}</span>
-                            : <span id="npTitle">-</span>
-                        }
-
-                        </div>
+                        {this.renderNowPlay()}
                         <div id="audiowrap">
                             <div id="audio0">
                                 <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} onPlay={this.onPlay} onPause={this.onPause}>
