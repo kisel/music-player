@@ -6,6 +6,7 @@ import * as readdir from 'recursive-readdir'
 import * as util from 'util'
 import { IAudioMetadata } from 'music-metadata/lib/type';
 import { getConfig, getUrlFromPath } from './config';
+const windows1251 = require('windows-1251');
 
 const fs_writeFile = util.promisify(fs.writeFile)
 const fs_readFile = util.promisify(fs.readFile)
@@ -101,10 +102,22 @@ export async function rescanLibrary() {
     }
 }
 
+const RE_BAD_UNICODE=/[\u007E-\u00ff]/
+
+export function fixStrEncoding(str: string): string {
+    if (RE_BAD_UNICODE.test(str)) {
+        return windows1251.decode(str);
+    } else {
+        return str;
+    }
+}
+
 export function trackInfoFromDb(dbTrackInfo: TrackInfo): TrackInfo {
     const {id, artist, title, duration, rating} = dbTrackInfo;
     return {
-        id, artist, title, duration, rating,
+        id, duration, rating,
+        artist: fixStrEncoding(artist),
+        title: fixStrEncoding(title),
         url: getUrlFromPath(dbTrackInfo.path)
     };
 }
