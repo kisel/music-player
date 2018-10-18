@@ -90,7 +90,6 @@ background-color:rgba(0,0,0,.1);
 }
 
 .rating-stars {
-    float: right;
     color: yellow;
     transition: color 350ms;
 
@@ -100,6 +99,38 @@ background-color:rgba(0,0,0,.1);
 
     > a:hover ~ a{
         color: yellow;
+    }
+}
+
+.playlist {
+    margin: 0 auto;
+    width: 95vw;
+}
+.playlist-track {
+    display: flex;
+    height: 40px;
+
+    &.playing {
+        background-color: coral;
+        color:#fff;
+        cursor:default !important;
+    }
+
+    .track-info {
+        flex-grow: 1;
+    }
+
+    .track-stats {
+        text-align: right;
+    }
+
+    &:hover {
+        background-color:rgba(44, 226, 226, 0.1) !important;
+    }
+
+    .artist {
+        font-weight: 300 !important;
+        color:red !important;
     }
 }
 

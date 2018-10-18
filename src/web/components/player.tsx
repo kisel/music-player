@@ -1,9 +1,23 @@
 import {h, Component } from "preact";
 import { getTracks, setTrackRating } from "../api";
+import 'react-virtualized/styles.css'
 import "../player.scss"
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
+import { List } from 'react-virtualized'
+//const { Column, Table, List } = require('react-virtualized')
+import * as classnames from 'classnames';
+
+function matchInAttributes(data: any, attributes: string[], filter: string) {
+    for (const attr of attributes) {
+        const val = data[attr];
+        if (val && val.search(filter)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 interface PlaylistProps {
     tracks: TrackInfo[];
@@ -13,8 +27,12 @@ interface PlaylistProps {
 declare var navigator: any;
 declare var MediaMetadata: any;
 
-function matchTrack(pattern: string, track: TrackInfo) {
-
+function getTrackFilename(trackInfo: TrackInfo) {
+    const pattern = trackInfo.url;
+    if (!pattern) {
+        return "";
+    }
+    return pattern.replace(/.*[\\\/]/, '');
 }
 
 function formatDuration(duration: number) {
@@ -90,26 +108,44 @@ export class Player extends Component {
     }
 
     renderPlaylist() {
-        const {tracks, playlistFilter} = this.state;
+        let {tracks, playlistFilter} = this.state;
+        const {currentTrack} = this.state;
+        if (playlistFilter) {
+            // TODO: move to redux
+            tracks = tracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], playlistFilter));
+        }
+        const rowRenderer = ({index, key, style}: any) => {
+            const trackInfo = tracks[index];
+            const {artist, title, duration} = trackInfo;
+            return (
+                <div key={key} style={style} className={classnames("playlist-track", {"playing": currentTrack == index})}>
+                    <div className="track-info" onClick={() => this.playTrack(index)}>
+                        <div className="artist">
+                        {artist || "Unknown"}
+                        </div>
+                        <div class="title">
+                        {title || getTrackFilename(trackInfo)}
+                        </div>
+                    </div>
+                    <div class="track-stats">
+                    {this.renderRating(trackInfo)}
+                    <div class="duration">
+                        {formatDuration(duration)}
+                    </div>
+                    </div>
+                </div>
+            )
+        }
         return (
-            <table class="playlist">
-                {tracks.map((trackInfo, index) => {
-                    const {artist, title, duration, rating} = trackInfo;
-                    const {currentTrack} = this.state;
-                    if (!playlistFilter || (artist && artist.search(playlistFilter) >= 0) || (title && title.search(playlistFilter) >= 0)) {
-                        return (
-                            <tr key={index} class={(currentTrack == index) ? "plSel" : undefined}>
-                                <td>{index + 1} </td>
-                                <td onClick={() => this.playTrack(index)}>{artist}-{title}</td>
-                                <td>{this.renderRating(trackInfo)}</td>
-                                <td>{formatDuration(duration)}</td>
-                            </tr>
-                        );
-                    } else {
-                        return null;
-                    }
-                } )}
-            </table>
+            <List
+            className="playlist"
+            autoHeight={false}
+            width={1024}
+            height={600}
+            rowHeight={40}
+            rowCount={tracks.length}
+            rowRenderer={rowRenderer}
+            />
         );
     }
 
