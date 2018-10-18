@@ -40,6 +40,12 @@ a[id^="btn"]:active {
     #nowPlay { display:none; }
 }
 
+#nowPlay {
+    .rating-stars {
+        float: right;
+    }
+}
+
 #player {
   z-index: 1;
   position:fixed;

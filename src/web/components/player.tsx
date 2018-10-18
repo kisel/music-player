@@ -8,6 +8,7 @@ import debounce = require('lodash/debounce');
 import { List } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
+import { KeyboardEventHandler } from "react";
 
 function matchInAttributes(data: any, attributes: string[], filter: string) {
     for (const attr of attributes) {
@@ -49,6 +50,7 @@ function formatDuration(duration: number) {
 export class Player extends Component {
     state = {
         tracks: [] as TrackInfo[],
+        displayedTracks: null as TrackInfo[], // only set if there is a search, null otherwise
         currentTrack: 0,
         playlistFilter: "",
     }
@@ -62,11 +64,11 @@ export class Player extends Component {
     fetchTracks = () => {
         getTracks().then((tracks) => {
             console.log(tracks);
-            this.setState({ tracks })
+            this.setState({ tracks: tracks, displayedTracks: null })
         });
     }
 
-    playTrack = (idx: number) => {
+    playTrackByIndex = (idx: number) => {
         const {tracks} = this.state;
         const audio = this.audio;
         if (!audio || !tracks || tracks.length == 0 || !tracks[idx]) {
@@ -78,6 +80,15 @@ export class Player extends Component {
         console.log("playing", trackInfo);
         audio.play();
         this.updateMediaSession();
+    }
+
+    trackIdToIndex = (id: number) => {
+        const idx = this.state.tracks.findIndex(track=>track.id == id);
+        return idx == -1 ? 0 : idx;
+    }
+
+    playTrackById = (id: number) => {
+        this.playTrackByIndex(this.trackIdToIndex(id));
     }
 
     setRating = (trackInfo: TrackInfo, newRating: number) => {
@@ -108,18 +119,15 @@ export class Player extends Component {
     }
 
     renderPlaylist() {
-        let {tracks, playlistFilter} = this.state;
-        const {currentTrack} = this.state;
-        if (playlistFilter) {
-            // TODO: move to redux
-            tracks = tracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], playlistFilter));
-        }
+        let {tracks, displayedTracks, playlistFilter} = this.state;
+        const currentTrackId = this.getCurrentTrackId();
+        const playlist = displayedTracks || tracks;
         const rowRenderer = ({index, key, style}: any) => {
-            const trackInfo = tracks[index];
-            const {artist, title, duration} = trackInfo;
+            const trackInfo = playlist[index];
+            const {artist, title, duration, id} = trackInfo;
             return (
-                <div key={key} style={style} className={classnames("playlist-track", {"playing": currentTrack == index})}>
-                    <div className="track-info" onClick={() => this.playTrack(index)}>
+                <div key={key} style={style} className={classnames("playlist-track", {"playing": id == currentTrackId})}>
+                    <div className="track-info" onClick={() => this.playTrackById(id)}>
                         <div className="artist">
                         {artist || "Unknown"}
                         </div>
@@ -143,7 +151,7 @@ export class Player extends Component {
             width={1024}
             height={600}
             rowHeight={40}
-            rowCount={tracks.length}
+            rowCount={playlist.length}
             rowRenderer={rowRenderer}
             />
         );
@@ -153,12 +161,17 @@ export class Player extends Component {
         return this.state.tracks[this.state.currentTrack];
     }
 
+    getCurrentTrackId = () => {
+        const currentTrackInfo = this.state.tracks[this.state.currentTrack];
+        return currentTrackInfo ? currentTrackInfo.id : null;
+    }
+
     nextTrack = () => {
         const {tracks, currentTrack} = this.state;
         if (!tracks) {
             return;
         }
-        this.playTrack((currentTrack + 1) % tracks.length);
+        this.playTrackByIndex((currentTrack + 1) % tracks.length);
     }
 
     prevTrack = () => {
@@ -167,9 +180,9 @@ export class Player extends Component {
             return;
         }
         if (currentTrack === 0) {
-            this.playTrack(tracks.length - 1); // last
+            this.playTrackByIndex(tracks.length - 1); // last
         } else {
-            this.playTrack(currentTrack - 1); // prev
+            this.playTrackByIndex(currentTrack - 1); // prev
         }
     }
 
@@ -245,7 +258,14 @@ export class Player extends Component {
     }
 
     _playlistFilterChange = ({target: {value}}: any) => {
-        this.setState({playlistFilter: value})
+        let newDisplayedTracks = this.state.tracks;
+        if (value) {
+            // TODO: move to redux
+            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], value));
+        } else {
+            newDisplayedTracks = null;
+        }
+        this.setState({displayedTracks: newDisplayedTracks})
     }
     playlistFilterChange = debounce(this._playlistFilterChange, 500);
 
@@ -263,14 +283,16 @@ export class Player extends Component {
         );
     }
 
+    onKeyDown = (evt: KeyboardEvent) => {
+        console.log(evt.code, evt.key);
+    }
 
     render() {
         //<a id="btnLoadAll" onClick={this.loadAll}>ALL</a>
-        const {playlistFilter} = this.state;
         return (
         <div class="container">
                 {this.renderPlaylist()}
-                <div id="player">
+                <div id="player" onKeyDown={this.onKeyDown}>
                     <div class="wrapper">
                         {this.renderNowPlay()}
                         <div id="audiowrap">
@@ -283,7 +305,7 @@ export class Player extends Component {
                                 <a id="btnPrev" onClick={this.prevTrack}>&larr;</a>
                                 <a id="btnNext" onClick={this.nextTrack}>&rarr;</a>
                                 <a id="btnShuffle" onClick={this.shuffleAll}>Shuffle</a>
-                                <input class="playlist-filter" onInput={this.playlistFilterChange} title="filter...">{playlistFilter}</input>
+                                <input class="playlist-filter" onInput={this.playlistFilterChange} title="filter..."/>
                                 <input type="range" id="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume}/>
                                 <label for="volume">Volume</label>
                             </div>
