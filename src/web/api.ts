@@ -21,9 +21,9 @@ function callRPC<T>(rpc: ApiCalls, arg: any): Promise<T> {
 }
 
 export async function getTracks() {
-    return callRPC(ApiCalls.listTracks, null);
+    return callRPC<TrackInfo[]>(ApiCalls.listTracks, null);
 }
 
 export async function setTrackRating(track: Partial<TrackInfo>) {
-    return callRPC(ApiCalls.setTrackRating, track);
+    return callRPC<TrackInfo>(ApiCalls.setTrackRating, track);
 }

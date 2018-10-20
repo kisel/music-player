@@ -47,13 +47,18 @@ function formatDuration(duration: number) {
     }
 }
 
-export class Player extends Component {
+interface PlayerState {
+    tracks: TrackInfo[];
+    displayedTracks: TrackInfo[]; // only set if there is a search, null otherwise
+    currentTrack: number; // index of tracks array
+}
+export class Player extends Component<any, PlayerState> {
     state = {
-        tracks: [] as TrackInfo[],
-        displayedTracks: null as TrackInfo[], // only set if there is a search, null otherwise
+        tracks: [],
+        displayedTracks: null,
         currentTrack: 0,
-        playlistFilter: "",
     }
+    refs: any;
     audio: any = null;
 
     constructor() {
@@ -119,7 +124,7 @@ export class Player extends Component {
     }
 
     renderPlaylist() {
-        let {tracks, displayedTracks, playlistFilter} = this.state;
+        let {tracks, displayedTracks} = this.state;
         const currentTrackId = this.getCurrentTrackId();
         const playlist = displayedTracks || tracks;
         const rowRenderer = ({index, key, style}: any) => {
@@ -146,7 +151,7 @@ export class Player extends Component {
         }
         return (
             <List
-            className="playlist"
+            class="playlist"
             autoHeight={false}
             width={1024}
             height={600}
