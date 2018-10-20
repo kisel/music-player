@@ -8,4 +8,5 @@
 *.css text
 *.sass text
 *.scss text
+*.opts text
 
