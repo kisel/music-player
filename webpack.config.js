@@ -7,7 +7,7 @@ const devMode = process.env.NODE_ENV !== 'production' // TODO: proper mode check
 
 const frontend = {
   entry: {
-      app: './src/web/index.tsx',
+      app: ['./src/web/main.tsx'],
   },
   output: {
     path: path.resolve(__dirname, './public'),
@@ -42,7 +42,8 @@ const frontend = {
     ]
   },
   resolve: {
-    extensions: ['.ts', '.js', '.tsx', '.json', '.css', '.scss'],
+    extensions: [".js", ".ts", ".tsx", ".jsx"],
+
     alias: {
       'react': 'preact-compat',
       'react-dom': 'preact-compat',
@@ -51,10 +52,6 @@ const frontend = {
       // Not necessary unless you consume a module requiring `react-dom-factories`
       'react-dom-factories': 'preact-compat/lib/react-dom-factories'
     }
-  },
-  devServer: {
-    historyApiFallback: true,
-    noInfo: true
   },
   performance: {
     hints: false

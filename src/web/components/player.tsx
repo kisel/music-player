@@ -1,7 +1,5 @@
 import {h, Component } from "preact";
 import { getTracks, setTrackRating } from "../api";
-import 'react-virtualized/styles.css'
-import "../player.scss"
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
@@ -277,8 +275,8 @@ export class Player extends Component<any, PlayerState> {
             <div class="nowPlay">
                 {
                     trackInfo
-                        ? <span id="npTitle">{trackInfo.index + 1} {trackInfo.artist}-{trackInfo.title}</span>
-                        : <span id="npTitle">-</span>
+                        ? <span class="npTitle">{trackInfo.artist}-{trackInfo.title}</span>
+                        : <span class="npTitle">-</span>
                 }
                 {trackInfo ? this.renderRating(trackInfo) : null}
             </div>

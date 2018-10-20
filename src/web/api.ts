@@ -4,7 +4,9 @@ import { resolve } from 'url';
 import { ApiCalls } from '../common/api_calls';
 import { TrackInfo } from '../common/track';
 
-const api = io('/');
+const api = io('/', {
+    // transports: ['websocket']
+});
 
 api.on('hello', function (data: any) {
     console.log(data);

@@ -1,5 +1,5 @@
 import {h, Component } from "preact";
-import {Player} from './player'
+import {Player} from './components/player'
 
 export function App() {
     return (
