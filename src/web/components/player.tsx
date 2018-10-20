@@ -5,21 +5,11 @@ import "../player.scss"
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
-import { List } from 'react-virtualized'
+import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
 import { KeyboardEventHandler } from "react";
-
-function matchInAttributes(data: any, attributes: string[], filter: string) {
-    for (const attr of attributes) {
-        const val = data[attr];
-        if (val && val.search(filter)) {
-            return true;
-        }
-    }
-    return false;
-}
-
+import { matchInAttributes, buildFuzzySearch } from "../../utils/filters";
 interface PlaylistProps {
     tracks: TrackInfo[];
     playTrack: (TrackInfo)=>void;
@@ -149,16 +139,22 @@ export class Player extends Component<any, PlayerState> {
                 </div>
             )
         }
-        return (
+        const list = ({ height, width }) => (
             <List
-            class="playlist"
-            autoHeight={false}
-            width={1024}
-            height={600}
-            rowHeight={40}
-            rowCount={playlist.length}
-            rowRenderer={rowRenderer}
+                class="playlist"
+                autoHeight={false}
+                width={width}
+                height={height}
+                rowHeight={40}
+                rowCount={playlist.length}
+                rowRenderer={rowRenderer}
             />
+        );
+
+        return (
+            <div class="playlist-container">
+              <AutoSizer children={list}/>
+            </div>
         );
     }
 
@@ -262,22 +258,23 @@ export class Player extends Component<any, PlayerState> {
         this.audio = audio;
     }
 
-    _playlistFilterChange = ({target: {value}}: any) => {
+    playlistFilterChange = ({target: {value}}: any) => {
         let newDisplayedTracks = this.state.tracks;
         if (value) {
             // TODO: move to redux
-            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], value));
+            const rex = buildFuzzySearch(value);
+            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], rex));
         } else {
             newDisplayedTracks = null;
         }
         this.setState({displayedTracks: newDisplayedTracks})
     }
-    playlistFilterChange = debounce(this._playlistFilterChange, 500);
+    //playlistFilterChange = debounce(this._playlistFilterChange, 500);
 
     renderNowPlay() {
         const trackInfo = this.getCurrentTrack();
         return (
-            <div id="nowPlay">
+            <div class="nowPlay">
                 {
                     trackInfo
                         ? <span id="npTitle">{trackInfo.index + 1} {trackInfo.artist}-{trackInfo.title}</span>
@@ -295,26 +292,21 @@ export class Player extends Component<any, PlayerState> {
     render() {
         //<a id="btnLoadAll" onClick={this.loadAll}>ALL</a>
         return (
-        <div class="container">
+        <div class="player">
                 {this.renderPlaylist()}
-                <div id="player" onKeyDown={this.onKeyDown}>
-                    <div class="wrapper">
-                        {this.renderNowPlay()}
-                        <div id="audiowrap">
-                            <div id="audio0">
-                                <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} onPlay={this.onPlay} onPause={this.onPause}>
-                                    Your browser does not support HTML5 Audio!
+                <div class="player-footer">
+                    {this.renderNowPlay()}
+                    <div class="audio0">
+                        <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} onPlay={this.onPlay} onPause={this.onPause}>
+                            Your browser does not support HTML5 Audio!
                                 </audio>
-                            </div>
-                            <div id="playControls">
-                                <a id="btnPrev" onClick={this.prevTrack}>&larr;</a>
-                                <a id="btnNext" onClick={this.nextTrack}>&rarr;</a>
-                                <a id="btnShuffle" onClick={this.shuffleAll}>Shuffle</a>
-                                <input class="playlist-filter" onInput={this.playlistFilterChange} title="filter..."/>
-                                <input type="range" id="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume}/>
-                                <label for="volume">Volume</label>
-                            </div>
-                        </div>
+                    </div>
+                    <div class="playControls">
+                        <a class="btn" onClick={this.prevTrack}>&larr;</a>
+                        <a class="btn" onClick={this.nextTrack}>&rarr;</a>
+                        <a class="btn" onClick={this.shuffleAll}>Shuffle</a>
+                        <input class="playlist-filter" onInput={this.playlistFilterChange} title="filter..." />
+                        <input type="range" class="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume} />
                     </div>
                 </div>
         </div>
