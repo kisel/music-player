@@ -1,4 +1,6 @@
-import { h, render, Component } from 'preact';
+import * as React from 'react'
+import {render} from 'react-dom'
+
 import { App } from './app';
 
 import 'react-virtualized/styles.css'

@@ -1,4 +1,5 @@
-import {h, Component } from "preact";
+import * as React from 'react'
+
 import {Player} from './components/player'
 
 export function App() {
@@ -6,3 +7,4 @@ export function App() {
         <Player/>
     );
 }
+

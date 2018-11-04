@@ -1,4 +1,6 @@
-import {h, Component } from "preact";
+import * as React from 'react'
+import {Component} from 'react'
+
 import { getTracks, setTrackRating } from "../api";
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
@@ -48,11 +50,6 @@ export class Player extends Component<any, PlayerState> {
     }
     refs: any;
     audio: any = null;
-
-    constructor() {
-        super();
-        this.fetchTracks();
-    }
 
     fetchTracks = () => {
         getTracks().then((tracks) => {
@@ -105,7 +102,7 @@ export class Player extends Component<any, PlayerState> {
             res.push(<a key={i} onClick={() => this.setRating(trackInfo, i)}>{(i <= rating) ? "\u2605" : "\u2606"}</a>);
         }
         return (
-            <div class="rating-stars">
+            <div className="rating-stars">
                 {res}
             </div>
         )
@@ -124,13 +121,13 @@ export class Player extends Component<any, PlayerState> {
                         <div className="artist">
                         {artist || "Unknown"}
                         </div>
-                        <div class="title">
+                        <div className="title">
                         {title || getTrackFilename(trackInfo)}
                         </div>
                     </div>
-                    <div class="track-stats">
+                    <div className="track-stats">
                     {this.renderRating(trackInfo)}
-                    <div class="duration">
+                    <div className="duration">
                         {formatDuration(duration)}
                     </div>
                     </div>
@@ -139,7 +136,7 @@ export class Player extends Component<any, PlayerState> {
         }
         const list = ({ height, width }) => (
             <List
-                class="playlist"
+                className="playlist"
                 autoHeight={false}
                 width={width}
                 height={height}
@@ -150,7 +147,7 @@ export class Player extends Component<any, PlayerState> {
         );
 
         return (
-            <div class="playlist-container">
+            <div className="playlist-container">
               <AutoSizer children={list}/>
             </div>
         );
@@ -244,6 +241,7 @@ export class Player extends Component<any, PlayerState> {
 
     }
     componentDidMount()  {
+        this.fetchTracks();
         if (navigator && navigator.mediaSession) {
             navigator.mediaSession.setActionHandler('previoustrack', () => this.prevTrack() );
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack() );
@@ -272,11 +270,11 @@ export class Player extends Component<any, PlayerState> {
     renderNowPlay() {
         const trackInfo = this.getCurrentTrack();
         return (
-            <div class="nowPlay">
+            <div className="nowPlay">
                 {
                     trackInfo
-                        ? <span class="npTitle">{trackInfo.artist}-{trackInfo.title}</span>
-                        : <span class="npTitle">-</span>
+                        ? <span className="npTitle">{trackInfo.artist}-{trackInfo.title}</span>
+                        : <span className="npTitle">-</span>
                 }
                 {trackInfo ? this.renderRating(trackInfo) : null}
             </div>
@@ -290,21 +288,21 @@ export class Player extends Component<any, PlayerState> {
     render() {
         //<a id="btnLoadAll" onClick={this.loadAll}>ALL</a>
         return (
-        <div class="player">
+        <div className="player">
                 {this.renderPlaylist()}
-                <div class="player-footer">
+                <div className="player-footer">
                     {this.renderNowPlay()}
-                    <div class="audio0">
+                    <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} onPlay={this.onPlay} onPause={this.onPause}>
                             Your browser does not support HTML5 Audio!
                                 </audio>
                     </div>
-                    <div class="playControls">
-                        <a class="btn" onClick={this.prevTrack}>&larr;</a>
-                        <a class="btn" onClick={this.nextTrack}>&rarr;</a>
-                        <a class="btn" onClick={this.shuffleAll}>Shuffle</a>
-                        <input class="playlist-filter" onInput={this.playlistFilterChange} title="filter..." />
-                        <input type="range" class="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume} />
+                    <div className="playControls">
+                        <a className="btn" onClick={this.prevTrack}>&larr;</a>
+                        <a className="btn" onClick={this.nextTrack}>&rarr;</a>
+                        <a className="btn" onClick={this.shuffleAll}>Shuffle</a>
+                        <input className="playlist-filter" onInput={this.playlistFilterChange} title="filter..." />
+                        <input type="range" className="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume} />
                     </div>
                 </div>
         </div>

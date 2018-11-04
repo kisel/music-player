@@ -10,3 +10,5 @@
 *.scss text
 *.opts text
 
+package-lock.json -diff -merge
+

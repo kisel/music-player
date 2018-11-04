@@ -81,6 +81,7 @@ export function mmToTrack(path: string, meta: IAudioMetadata): TrackInfo {
 }
 
 export async function importDir(path: string) {
+    const existingTracks = await Tracks.all();
     const ignore: any = [(file, stats)=>(!RE_MP3.test(file))];
     const files = (await readdir(path)).filter(isMp3);
     console.log(path, files.length);
@@ -90,7 +91,7 @@ export async function importDir(path: string) {
         console.log(`${meta.common.artist} - ${meta.common.title}`);
         media_data.push(mmToTrack(file, meta));
     }
-    await fs_writeFile("data/mm.json", JSON.stringify(media_data), 'utf8');// TODO: tmp
+    //await fs_writeFile("data/mm.json", JSON.stringify(media_data), 'utf8');
     await Tracks.bulkCreate(media_data);
 }
 
