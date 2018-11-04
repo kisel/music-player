@@ -1,5 +1,5 @@
 import { Tracks } from './../src/server/database';
-import { importTracks, readTracksJson, importDir, sanitizeTrackInfo } from './../src/server/find_tracks';
+import { importTracks, readTracksJson, sanitizeTrackInfo } from './../src/server/find_tracks';
 import { expect } from 'chai';
 import { TrackInfo } from '../src/common/track';
 //import 'mocha';
@@ -38,11 +38,6 @@ describe('Database', () => {
 
   it('should handle unicode ctrl characters', async () => {
     await Tracks.bulkCreate(await readTracksJson("test/tracks-unicode-ctrl.json"));
-  });
-
-  it('should import directories', async function () {
-      this.timeout(30000);
-      await importDir('/data/media/music');
   });
 
   if (false) {

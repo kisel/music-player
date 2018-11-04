@@ -56,7 +56,7 @@ export function sanitizeTrackInfo(ti: TrackInfo) {
 
 export async function readTracksJson(file): Promise<TrackInfo[]> {
     // TODO: proper promise
-    let tracks = JSON.parse(await fs_readFile(file, 'utf8')) as TrackInfo[];
+    let tracks = JSON.parse((await fs_readFile(file, 'utf8')) as any) as TrackInfo[];
     tracks.forEach(sanitizeTrackInfo);
     return Promise.resolve(tracks);
 }
@@ -80,27 +80,36 @@ export function mmToTrack(path: string, meta: IAudioMetadata): TrackInfo {
     }
 }
 
-export async function importDir(path: string) {
-    const existingTracks = await Tracks.all();
-    const ignore: any = [(file, stats)=>(!RE_MP3.test(file))];
-    const files = (await readdir(path)).filter(isMp3);
-    console.log(path, files.length);
-    const media_data = [];
-    for (const file of files) {
-        const meta = await mm.parseFile(file);
-        console.log(`${meta.common.artist} - ${meta.common.title}`);
-        media_data.push(mmToTrack(file, meta));
+export async function importDirs(paths: string[]) {
+    let trackSet = new Set();
+    (await Tracks.all()).forEach(t => trackSet.add(t.path));
+
+    for (const path of paths)  {
+        console.log(`importing ${path}`)
+        const files = (await readdir(path)).filter(isMp3);
+        console.log(path, files.length);
+        const media_data = [];
+        for (const file of files) {
+
+            if (trackSet.has(file)) {
+                console.log(`Skipping ${file}`)
+                continue;
+            } else {
+                console.log(`Adding ${file}`)
+            }
+
+            const meta = await mm.parseFile(file);
+            console.log(`${meta.common.artist} - ${meta.common.title}`);
+            media_data.push(mmToTrack(file, meta));
+        }
+        //await fs_writeFile("data/mm.json", JSON.stringify(media_data), 'utf8');
+        await Tracks.bulkCreate(media_data);
     }
-    //await fs_writeFile("data/mm.json", JSON.stringify(media_data), 'utf8');
-    await Tracks.bulkCreate(media_data);
 }
 
 export async function rescanLibrary() {
     await Tracks.sync();
-    const dirs = getConfig().media_library;
-    for (const dir of dirs)  {
-        await importDir(dir);
-    }
+    await importDirs(getConfig().media_library);
 }
 
 const RE_BAD_UNICODE=/[\u007E-\u00ff]/
