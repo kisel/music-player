@@ -107,12 +107,16 @@ width: 100%;
 
     .track-info {
         flex-grow: 1;
+        flex-shrink: 1;
         padding-left: 10px;
+        overflow: hidden;
     }
 
     .track-stats {
         text-align: right;
         padding-right: 10px;
+        //flex-grow: 0;
+        flex-shrink: 0;
     }
 
     &:hover {
