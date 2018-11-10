@@ -121,6 +121,9 @@ width: 100%;
 
     &:hover {
         background-color:rgba(44, 226, 226, 0.1);
+        .track-buttons {
+            display: inline-flex;
+        }
     }
 
     .artist {
@@ -135,3 +138,19 @@ width: 100%;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
+.track-buttons {
+    /* display: inline-flex;  on track hover*/
+    display: none;
+    align-items: center;
+}
+
+.track-buttons > img {
+    width: 12px;
+    height: 12px;
+    filter: invert(40%);
+    padding: 12px;
+    &:hover {
+        filter: invert(100%);
+    }
+}
+

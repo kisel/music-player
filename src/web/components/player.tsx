@@ -10,6 +10,9 @@ import { List, AutoSizer } from 'react-virtualized'
 import * as classnames from 'classnames';
 import { KeyboardEventHandler } from "react";
 import { matchInAttributes, buildFuzzySearch } from "../../utils/filters";
+const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
+const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
+
 interface PlaylistProps {
     tracks: TrackInfo[];
     playTrack: (TrackInfo)=>void;
@@ -23,7 +26,7 @@ function getTrackFilename(trackInfo: TrackInfo) {
     if (!pattern) {
         return "";
     }
-    return pattern.replace(/.*[\\\/]/, '');
+    return pattern.replace(/.*[\\\/]/, '').replace(/.mp3$/i, '');
 }
 
 function formatDuration(duration: number) {
@@ -77,8 +80,10 @@ export class Player extends Component<any, PlayerState> {
         return idx == -1 ? 0 : idx;
     }
 
-    playTrackById = (id: number) => {
-        this.playTrackByIndex(this.trackIdToIndex(id));
+    playTrackById = (id: number) => { this.playTrackByIndex(this.trackIdToIndex(id)); }
+
+    getTrackById = (id: number) => {
+        return this.state.tracks.find(track=>track.id == id);
     }
 
     setRating = (trackInfo: TrackInfo, newRating: number) => {
@@ -108,6 +113,28 @@ export class Player extends Component<any, PlayerState> {
         )
     }
 
+    getTrackTitle(trackInfo: TrackInfo) {
+        const {artist, title, duration, id} = trackInfo;
+        return title || getTrackFilename(trackInfo);
+    }
+
+    getTrackLineName(trackInfo: TrackInfo) {
+        const {artist, title, duration, id} = trackInfo;
+        if (artist && title) {
+            return `${artist} - ${title}`
+        } else {
+            return getTrackFilename(trackInfo);
+        }
+    }
+
+    showTrackInfo = (id: number) => {
+        alert(JSON.stringify(this.getTrackById(id), undefined, 2));
+    }
+
+    deleteTrack = (id: number) => {
+        alert("Not implemented yet");
+    }
+
     renderPlaylist() {
         let {tracks, displayedTracks} = this.state;
         const currentTrackId = this.getCurrentTrackId();
@@ -122,8 +149,12 @@ export class Player extends Component<any, PlayerState> {
                         {artist || "Unknown"}
                         </div>
                         <div className="title">
-                        {title || getTrackFilename(trackInfo)}
+                        {(artist && title) || getTrackFilename(trackInfo)}
                         </div>
+                    </div>
+                    <div className="track-buttons">
+                    <img src={info_svg} onClick={() => this.showTrackInfo(id) }/>
+                    <img src={trash_svg} onClick={()=> this.deleteTrack(id) }/>
                     </div>
                     <div className="track-stats">
                     {this.renderRating(trackInfo)}
@@ -258,8 +289,9 @@ export class Player extends Component<any, PlayerState> {
         let newDisplayedTracks = this.state.tracks;
         if (value) {
             // TODO: move to redux
+            // allow searching by multiple attributes
             const rex = buildFuzzySearch(value);
-            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title'], rex));
+            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title', 'url'], rex));
         } else {
             newDisplayedTracks = null;
         }
@@ -273,7 +305,7 @@ export class Player extends Component<any, PlayerState> {
             <div className="nowPlay">
                 {
                     trackInfo
-                        ? <span className="npTitle">{trackInfo.artist}-{trackInfo.title}</span>
+                        ? <span className="npTitle">{this.getTrackLineName(trackInfo)}</span>
                         : <span className="npTitle">-</span>
                 }
                 {trackInfo ? this.renderRating(trackInfo) : null}
@@ -301,7 +333,7 @@ export class Player extends Component<any, PlayerState> {
                         <a className="btn" onClick={this.prevTrack}>&larr;</a>
                         <a className="btn" onClick={this.nextTrack}>&rarr;</a>
                         <a className="btn" onClick={this.shuffleAll}>Shuffle</a>
-                        <input className="playlist-filter" onInput={this.playlistFilterChange} title="filter..." />
+                        <input className="playlist-filter" onInput={this.playlistFilterChange} placeholder="filter..." />
                         <input type="range" className="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume} />
                     </div>
                 </div>
