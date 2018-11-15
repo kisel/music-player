@@ -9,7 +9,7 @@ import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
 import { KeyboardEventHandler } from "react";
-import { matchInAttributes, buildFuzzySearch } from "../../utils/filters";
+import { dumbAttribFilter } from "../../utils/filters";
 const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
 const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
 
@@ -290,8 +290,9 @@ export class Player extends Component<any, PlayerState> {
         if (value) {
             // TODO: move to redux
             // allow searching by multiple attributes
-            const rex = buildFuzzySearch(value);
-            newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title', 'url'], rex));
+            //const rex = buildFuzzySearch(value);
+            //newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title', 'url'], rex));
+            newDisplayedTracks = dumbAttribFilter(newDisplayedTracks, value, ['artist', 'title', 'url']);
         } else {
             newDisplayedTracks = null;
         }
