@@ -37,6 +37,11 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   duration: Sequelize.INTEGER,
   path: Sequelize.STRING,
   meta: Sequelize.JSON,
+  playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+  playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+  playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+  lastPlayed: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+  deleted: Sequelize.DATE,
 }, {
     charset: 'utf8',
     collate: 'utf8_unicode_ci'

@@ -1,7 +1,8 @@
 import * as React from 'react'
 import {Component} from 'react'
 
-import { getTracks, setTrackRating } from "../api";
+import { TrackJournalEvtType } from "../../common/api_calls";
+import { playerConn } from "../api";
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
@@ -20,6 +21,7 @@ interface PlaylistProps {
 
 declare var navigator: any;
 declare var MediaMetadata: any;
+const THRESHOLD_SKIP = 30;
 
 function getTrackFilename(trackInfo: TrackInfo) {
     const pattern = trackInfo.url;
@@ -53,9 +55,10 @@ export class Player extends Component<any, PlayerState> {
     }
     refs: any;
     audio: any = null;
+    playing = false;
 
     fetchTracks = () => {
-        getTracks().then((tracks) => {
+        playerConn.listTracks().then((tracks) => {
             console.log(tracks);
             this.setState({ tracks: tracks, displayedTracks: null })
         });
@@ -66,6 +69,11 @@ export class Player extends Component<any, PlayerState> {
         const audio = this.audio;
         if (!audio || !tracks || tracks.length == 0 || !tracks[idx]) {
             return;
+        }
+
+
+        if (audio.currentTime > THRESHOLD_SKIP ) {
+            this.consumePromise(playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.SKIP }));
         }
         const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
@@ -95,7 +103,7 @@ export class Player extends Component<any, PlayerState> {
             }
         });
         this.setState({tracks: newTracks});
-        setTrackRating({...trackInfo, rating: newRating}).then((res)=>{
+        playerConn.setTrackRating({id: trackInfo.id, rating: newRating}).then((res)=>{
             console.log("Rating changed", res);
         });
     }
@@ -128,11 +136,17 @@ export class Player extends Component<any, PlayerState> {
     }
 
     showTrackInfo = (id: number) => {
-        alert(JSON.stringify(this.getTrackById(id), undefined, 2));
+        playerConn.getTrackInfoDump({id}).then(info => {
+            alert(JSON.stringify(info, undefined, 2));
+        });
     }
 
     deleteTrack = (id: number) => {
-        alert("Not implemented yet");
+        this.consumePromise(playerConn.deleteTrack({id})) 
+    }
+
+    consumePromise(p: Promise<any>) {
+        p.catch(() => console.log("Unhandled promise"))
     }
 
     renderPlaylist() {
@@ -224,30 +238,29 @@ export class Player extends Component<any, PlayerState> {
  
     onPause = (evt: any) => {
         console.log(evt);
+        this.playing = false;
     }
 
     onPlay = (evt: any) => {
         console.log(evt);
-        /*
-        .on('play', function () {
-            playing = true;
-        }).on('error', function () {
-            if (playing == true) {
-                audio.play();
-            }
-        }).on('pause', function () {
-            playing = false;
-        }).on('ended', function () {
-            if ((index + 1) < tracks.length) {
-                index++;
-                loadTrack(index);
-                audio.play();
-            } else {
-                audio.pause();
-                index = 0;
-                loadTrack(index);
-            }
-        }).get(0);*/
+        playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.PLAY })
+        this.playing = true;
+    }
+
+    onVolumeChange = (evt: any) => {
+        console.log(evt);
+    }
+
+    onEnded = (evt: any) => {
+        console.log(evt);
+        playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.END });
+        if (this.playing) {
+            this.nextTrack();
+        }
+    }
+
+    onTimeUpdate = (evt: any) => {
+        //console.log(evt);
     }
 
     stop() {
@@ -326,7 +339,13 @@ export class Player extends Component<any, PlayerState> {
                 <div className="player-footer">
                     {this.renderNowPlay()}
                     <div className="audio0">
-                        <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} onPlay={this.onPlay} onPause={this.onPause}>
+                        <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
+            onPlay={this.onPlay}
+            onPause={this.onPause}
+            onVolumeChange={this.onVolumeChange}
+            onTimeUpdate={this.onTimeUpdate}
+            onEnded={this.onEnded}
+            >
                             Your browser does not support HTML5 Audio!
                                 </audio>
                     </div>

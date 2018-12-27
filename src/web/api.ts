@@ -1,7 +1,7 @@
 // TODO: replace with pure websocket rpc
 import * as io from 'socket.io-client';
 import { resolve } from 'url';
-import { ApiCalls } from '../common/api_calls';
+import { PlayerAPI, TrackJournalEvtType} from '../common/api_calls';
 import { TrackInfo } from '../common/track';
 
 const api = io('/', {
@@ -14,7 +14,7 @@ api.on('hello', function (data: any) {
   });
 
 
-function callRPC<T>(rpc: ApiCalls, arg: any): Promise<T> {
+function callRPC<T>(rpc: string, arg: any): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         api.emit(rpc, arg, (data: any) => {
             resolve(data);
@@ -22,10 +22,14 @@ function callRPC<T>(rpc: ApiCalls, arg: any): Promise<T> {
     });
 }
 
-export async function getTracks() {
-    return callRPC<TrackInfo[]>(ApiCalls.listTracks, null);
-}
+export const playerConn = new Proxy({}, {
+        get: function(target, name){
+            return name in target?
+                target[name] :
+                (req) => callRPC(name.toString(), req);
+        }
+    }
+) as PlayerAPI;
 
-export async function setTrackRating(track: Partial<TrackInfo>) {
-    return callRPC<TrackInfo>(ApiCalls.setTrackRating, track);
-}
+
+

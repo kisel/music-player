@@ -9,6 +9,7 @@
     "web-dev-w": "webpack --watch --mode=development",
     "web-dev": "node scripts/webpack-dev-server.js",
     "rescan": "ts-node src/server/rescan.ts",
+    "backup": "cp -v data/database.sqlite data/database-$(date +%F).sqlite",
     "server-dev": "nodemon -w 'src/server/**/*.*' ./node_modules/.bin/ts-node src/server/server.ts",
     "test": "/usr/bin/env DATABASE=:memory: ./node_modules/.bin/mocha test/**/*.spec.ts"
   },

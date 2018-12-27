@@ -1,0 +1,18 @@
+version: '3.1'
+
+services:
+
+  site:
+    container_name: music.akisel.ru
+    image: node:10
+    #network_mode: bridge
+    restart: always
+    command: bash -c "npm i && npm run dev"
+    ports:
+      - 5555:5555
+    working_dir: /ws
+    volumes:
+      - ./:/ws
+      - /ws/node_modules
+      - /data/media/music:/data/media/music
+

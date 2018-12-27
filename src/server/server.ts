@@ -1,10 +1,11 @@
 
 var express = require('express');
 import * as socketio from 'socket.io';
-import { ApiCalls } from '../common/api_calls';
+import { PlayerAPI, TrackJournalEvtType } from '../common/api_calls';
 import { Tracks } from './database';
-import { initializeDatabase, trackInfoFromDb } from './find_tracks';
+import { initializeDatabase, trackInfoFromDb, trackDumpFromDb } from './find_tracks';
 import { TrackInfo } from '../common/track';
+import * as Sequelize from 'sequelize';
 
 const app = express();
 const port = parseInt(process.env.PORT || '5555');
@@ -19,25 +20,61 @@ console.log(`listening on port ${port}`);
 
 initializeDatabase();
 
+const api_handlers: PlayerAPI = {
+
+    listTracks: async () => {
+        return await Tracks.findAll({
+            where: { deleted: null },
+            attributes: ['id', 'artist', 'title', 'rating', 'path', 'duration']
+        }).then( tracks => tracks.map(trackInfoFromDb));
+    },
+
+    trackJournal: async ({id, evt}) => {
+        const track_upd = (key: keyof TrackInfo, extraChanges = {}) => {
+            return Tracks.update( {
+                [key]: Sequelize.literal(`${key} + 1`), ...extraChanges
+                }, { where: {id} }
+            );
+        };
+
+        if (evt == TrackJournalEvtType.PLAY) {
+            await track_upd('playStart');
+        }
+        if (evt == TrackJournalEvtType.SKIP) {
+            await track_upd('playSkip');
+        }
+        if (evt == TrackJournalEvtType.END) {
+            await track_upd('playEnd', {
+                lastPlayed: new Date(),
+            });
+        }
+    },
+
+    setTrackRating: async ({id, rating}) => {
+        await Tracks.update({rating: rating}, { where: {id: id}});
+    },
+
+    getTrackInfoDump: async ({id}) => {
+        return trackDumpFromDb(await Tracks.findById(id));
+    },
+
+    deleteTrack: async ({id}) => {
+        await Tracks.update({deleted: new Date()}, { where: {id: id}});
+    },
+}
+
 io.on('connection', function (socket) {
     socket.emit('hello', { hello: 'some data' });
 
-  socket.on(ApiCalls.listTracks, function (filters, respond) {
-    Tracks.all({
-      attributes: ['id', 'artist', 'title', 'rating', 'path', 'duration']
-    }).then(tracks => tracks.map(trackInfoFromDb)).then(respond);
-  });
-
-  socket.on(ApiCalls.getTrackDetails, function ({id}: {id: number}, respond) {
-    Tracks.find({ where: {id: id}}).then(track=>{
-      respond({url: '/media/' + track.path});
-    });
-  });
-
-  socket.on(ApiCalls.setTrackRating, function ({id, rating}: Partial<TrackInfo>, respond) {
-    Tracks.update({rating: rating}, { where: {id: id}}).then(track=>{
-      respond({ok: true});
-    });
-  });
+    for (const key in api_handlers) {
+        const handler = api_handlers[key];
+        socket.on(key, function (request_data, respond) {
+            try {
+                handler(request_data).then(respond)
+            } catch(e) {
+                respond({error: 'Internal error'})
+            }
+        });
+    };
 
 });

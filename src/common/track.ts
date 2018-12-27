@@ -11,4 +11,10 @@ export interface TrackInfo {
     path?: string;
     rating?: number;
     meta?: any;
+    playStart?: number; // count of started plays
+    playSkip?: number;  // count of skipped plays
+    playEnd?: number;   // played till the end
+    lastPlayed?: any; // date
+    deleted?: any; // date when track was marked as deleted
 }
+
