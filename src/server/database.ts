@@ -1,5 +1,6 @@
 import * as Sequelize from 'sequelize';
 import { TrackInfo } from '../common/track';
+import { SearchExpression } from '../common/api_calls';
 
 export function getDatabaseStorage() {
   return process.env['DATABASE'] || 'data/database.sqlite';
@@ -47,7 +48,7 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
     collate: 'utf8_unicode_ci'
 });
 
-export const SearchHistory = sequelize.define<TrackInfo, any>('search_history', {
+export const SearchHistory = sequelize.define<SearchExpression, any>('search_history', {
   expression: { type: Sequelize.STRING, unique: true },
 }, {
     charset: 'utf8',

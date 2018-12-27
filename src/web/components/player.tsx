@@ -11,8 +11,15 @@ import { List, AutoSizer } from 'react-virtualized'
 import * as classnames from 'classnames';
 import { KeyboardEventHandler } from "react";
 import { dumbAttribFilter } from "../../utils/filters";
+
 const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
 const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
+
+const play_svg = require("@fortawesome/fontawesome-free/svgs/solid/play.svg")
+const pause_svg = require("@fortawesome/fontawesome-free/svgs/solid/pause.svg")
+const random_svg = require("@fortawesome/fontawesome-free/svgs/solid/random.svg")
+const next_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-forward.svg")
+const prev_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-backward.svg")
 
 interface PlaylistProps {
     tracks: TrackInfo[];
@@ -22,6 +29,12 @@ interface PlaylistProps {
 declare var navigator: any;
 declare var MediaMetadata: any;
 const THRESHOLD_SKIP = 30;
+
+class Icon extends Component<any, any> {
+    render() {
+        return <img {...this.props}/>
+    }
+}
 
 function getTrackFilename(trackInfo: TrackInfo) {
     const pattern = trackInfo.url;
@@ -42,6 +55,36 @@ function formatDuration(duration: number) {
     }
 }
 
+
+interface SliderProps {
+    onValue?(val: number);
+    className?: string;
+}
+class Slider extends Component<SliderProps, any> {
+    state = {
+        max: 1,
+        val: 0,
+    }
+    onClick = (e: any) => {
+        const {max} = this.state;
+        const brect = e.target.getBoundingClientRect();
+        const value_selected = max * (e.clientX - brect.x) / brect.width;
+        if (this.props.onValue) {
+            this.props.onValue(value_selected);
+        }
+    }
+    render() {
+        const {max, val} = this.state;
+        const p = '' + 100 * (val / (max || 1)) + '%'
+        return (
+            <div className={classnames(this.props.className, "slider")} onClick={this.onClick}>
+                <div className="slider_amount" style={{width: p}}/>
+                <div className="slider_back"/>
+            </div>
+        )
+    }
+};
+
 interface PlayerState {
     tracks: TrackInfo[];
     displayedTracks: TrackInfo[]; // only set if there is a search, null otherwise
@@ -56,6 +99,8 @@ export class Player extends Component<any, PlayerState> {
     refs: any;
     audio: any = null;
     playing = false;
+    progressVol:any = null;
+    progressTrack: any = null;
 
     fetchTracks = () => {
         playerConn.listTracks().then((tracks) => {
@@ -230,9 +275,15 @@ export class Player extends Component<any, PlayerState> {
     renderTrackInfo() {
     }
 
-    onVolume = (val: any) => {
+    onTrackSeek = (val: number) => {
         if (this.audio) {
-            this.audio.volume = val.target.value;
+            this.audio.currentTime = val;
+        }
+    }
+
+    onVolume = (val: number) => {
+        if (this.audio) {
+            this.audio.volume = val;
         }
     }
  
@@ -248,7 +299,9 @@ export class Player extends Component<any, PlayerState> {
     }
 
     onVolumeChange = (evt: any) => {
-        console.log(evt);
+        if (this.progressVol) {
+            this.progressVol.setState({val: this.audio.volume, max: 1});
+        }
     }
 
     onEnded = (evt: any) => {
@@ -261,6 +314,10 @@ export class Player extends Component<any, PlayerState> {
 
     onTimeUpdate = (evt: any) => {
         //console.log(evt);
+        if (this.progressTrack) {
+            const {currentTime, duration} = this.audio;
+            this.progressTrack.setState({val: currentTime, max: duration});
+        }
     }
 
     stop() {
@@ -298,6 +355,17 @@ export class Player extends Component<any, PlayerState> {
         this.audio = audio;
     }
 
+    progressVolumeRef = (elem: any) => {
+        this.progressVol = elem;
+        if (this.audio.volume) {
+            this.progressVol.setState({val: this.audio.volume, max:1 })
+        }
+    }
+
+    progressTrackRef = (elem: any) => {
+        this.progressTrack = elem;
+    }
+
     playlistFilterChange = ({target: {value}}: any) => {
         let newDisplayedTracks = this.state.tracks;
         if (value) {
@@ -323,12 +391,25 @@ export class Player extends Component<any, PlayerState> {
                         : <span className="npTitle">-</span>
                 }
                 {trackInfo ? this.renderRating(trackInfo) : null}
+
+            <div>
+            <Slider ref={this.progressTrackRef} onValue={this.onTrackSeek}/>
+            </div>
             </div>
         );
     }
 
     onKeyDown = (evt: KeyboardEvent) => {
         console.log(evt.code, evt.key);
+    }
+
+    onPlayClick = (e: any) => {
+        const audio = this.audio;
+        if (audio && audio.src) {
+            audio.play();
+        } else {
+            this.nextTrack();
+        }
     }
 
     render() {
@@ -350,11 +431,15 @@ export class Player extends Component<any, PlayerState> {
                                 </audio>
                     </div>
                     <div className="playControls">
-                        <a className="btn" onClick={this.prevTrack}>&larr;</a>
-                        <a className="btn" onClick={this.nextTrack}>&rarr;</a>
-                        <a className="btn" onClick={this.shuffleAll}>Shuffle</a>
-                        <input className="playlist-filter" onInput={this.playlistFilterChange} placeholder="filter..." />
-                        <input type="range" className="vol_slider" name="volume" min="0" max="1" step="0.01" onInput={this.onVolume} />
+                        <Icon className="btn" src={play_svg} onClick={this.onPlayClick}/>
+                        <Icon className="btn" src={pause_svg} onClick={()=>this.audio.pause()}/>
+                        <Icon className="btn" src={prev_svg} onClick={this.prevTrack}/>
+                        <Icon className="btn" src={next_svg} onClick={this.nextTrack}/>
+                        <Icon className="btn" src={random_svg} onClick={this.shuffleAll}/>
+                        <div className="filterGroup">
+                          <input onInput={this.playlistFilterChange} placeholder="filter..." />
+                        </div>
+                        <Slider className="volume_slider" ref={this.progressVolumeRef} onValue={this.onVolume} />
                     </div>
                 </div>
         </div>

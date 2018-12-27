@@ -1,7 +1,7 @@
 
 var express = require('express');
 import * as socketio from 'socket.io';
-import { PlayerAPI, TrackJournalEvtType } from '../common/api_calls';
+import { PlayerAPI, TrackJournalEvtType, SearchExpression } from '../common/api_calls';
 import { Tracks, SearchHistory } from './database';
 import { initializeDatabase, trackInfoFromDb, trackDumpFromDb } from './find_tracks';
 import { TrackInfo } from '../common/track';
