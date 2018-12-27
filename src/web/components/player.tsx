@@ -78,8 +78,9 @@ class Slider extends Component<SliderProps, any> {
         const p = '' + 100 * (val / (max || 1)) + '%'
         return (
             <div className={classnames(this.props.className, "slider")} onClick={this.onClick}>
-                <div className="slider_amount" style={{width: p}}/>
-                <div className="slider_back"/>
+                <div className="slider_back">
+                    <div className="slider_amount" style={{width: p}}/>
+                </div>
             </div>
         )
     }
@@ -439,6 +440,7 @@ export class Player extends Component<any, PlayerState> {
                         <div className="filterGroup">
                           <input onInput={this.playlistFilterChange} placeholder="filter..." />
                         </div>
+                        <div className="spacer"/>
                         <Slider className="volume_slider" ref={this.progressVolumeRef} onValue={this.onVolume} />
                     </div>
                 </div>
