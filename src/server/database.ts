@@ -35,7 +35,7 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   name: Sequelize.STRING,
   rating: Sequelize.INTEGER,
   duration: Sequelize.INTEGER,
-  path: Sequelize.STRING,
+  path: { type: Sequelize.STRING, unique: true },
   meta: Sequelize.JSON,
   playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
   playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
@@ -46,4 +46,12 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
     charset: 'utf8',
     collate: 'utf8_unicode_ci'
 });
+
+export const SearchHistory = sequelize.define<TrackInfo, any>('search_history', {
+  expression: { type: Sequelize.STRING, unique: true },
+}, {
+    charset: 'utf8',
+    collate: 'utf8_unicode_ci'
+});
+
 

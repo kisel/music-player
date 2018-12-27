@@ -2,7 +2,7 @@
 var express = require('express');
 import * as socketio from 'socket.io';
 import { PlayerAPI, TrackJournalEvtType } from '../common/api_calls';
-import { Tracks } from './database';
+import { Tracks, SearchHistory } from './database';
 import { initializeDatabase, trackInfoFromDb, trackDumpFromDb } from './find_tracks';
 import { TrackInfo } from '../common/track';
 import * as Sequelize from 'sequelize';
@@ -61,6 +61,15 @@ const api_handlers: PlayerAPI = {
     deleteTrack: async ({id}) => {
         await Tracks.update({deleted: new Date()}, { where: {id: id}});
     },
+
+    getSearchHistory: async ({id}) => {
+        return await SearchHistory.all({ limit: 20});
+    },
+
+    addSearchHistory: async (req: SearchExpression) => {
+        await SearchHistory.create(req);
+    },
+
 }
 
 io.on('connection', function (socket) {

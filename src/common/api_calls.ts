@@ -16,6 +16,10 @@ export interface TrackJournalEvt {
 }
 
 
+export interface SearchExpression {
+    expression?: string;
+}
+
 export interface PlayerAPI {
     listTracks(): Promise<TrackInfo[]>;
     trackJournal(req: {id: number, evt: TrackJournalEvtType});
@@ -23,5 +27,8 @@ export interface PlayerAPI {
 
     getTrackInfoDump(req: {id: number});
     deleteTrack(req: {id: number});
+
+    getSearchHistory(req: any): Promise<SearchExpression[]>;
+    addSearchHistory(req: SearchExpression);
 }
 
