@@ -102,6 +102,7 @@ export class Player extends Component<any, PlayerState> {
     playing = false;
     progressVol:any = null;
     progressTrack: any = null;
+    playlist: any = null;
 
     fetchTracks = () => {
         playerConn.listTracks().then((tracks) => {
@@ -128,7 +129,9 @@ export class Player extends Component<any, PlayerState> {
         }
         const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
-        this.setState({currentTrackId: trackInfo.id});
+        this.setState({currentTrackId: trackInfo.id}, ()=>{
+            this.scrollToCurrentTrack();
+        });
         console.log("playing", trackInfo);
         audio.play();
         this.updateMediaSession();
@@ -140,7 +143,7 @@ export class Player extends Component<any, PlayerState> {
     }
 
     playTrackById = (id: number) => { this.playTrackByIndex(this.trackIdToIndex(id)); }
-
+;
     getTrackById = (id: number) => {
         return this.state.tracks.find(track=>track.id == id);
     }
@@ -224,7 +227,7 @@ export class Player extends Component<any, PlayerState> {
             )
         }
         const list = ({ height, width }) => (
-            <List
+            <List ref={this.playlistRef}
                 className="playlist"
                 autoHeight={false}
                 width={width}
@@ -248,6 +251,10 @@ export class Player extends Component<any, PlayerState> {
 
     getCurrentTrackIndex = () => {
         return this.state.tracks.findIndex(t=>t.id == this.state.currentTrackId);
+    }
+
+    getVisibleTracklist = () => {
+        return this.state.displayedTracks || this.state.tracks;
     }
 
     getCurrentTrackId = () => {
@@ -313,8 +320,20 @@ export class Player extends Component<any, PlayerState> {
     }
 
     shuffleAll = () => {
-        this.stop();
-        this.setState({tracks: shuffle(this.state.tracks)});
+        this.setState({tracks: shuffle(this.state.tracks)}, ()=> {
+            this.scrollToCurrentTrack()
+        });
+    }
+
+    scrollToCurrentTrack = () => {
+        const currentTrackId = this.getCurrentTrackId();
+        this.scrollToTrackIndex(this.getVisibleTracklist().findIndex(t=>t.id == currentTrackId));
+    }
+
+    scrollToTrackIndex = (idx: number) => {
+        if (this.playlist) {
+            this.playlist.scrollToRow(idx);
+        }
     }
 
     updateMediaSession = () => {
@@ -358,6 +377,10 @@ export class Player extends Component<any, PlayerState> {
         }
     }
 
+    playlistRef = (elem: any) => {
+        this.playlist = elem;
+    }
+
     audioRef = (audio: any) => {
         if (this.audio) {
             this.audio.pause();
@@ -379,7 +402,6 @@ export class Player extends Component<any, PlayerState> {
     playlistFilterChange = ({target: {value}}: any) => {
         let newDisplayedTracks = this.state.tracks;
         if (value) {
-            // TODO: move to redux
             // allow searching by multiple attributes
             //const rex = buildFuzzySearch(value);
             //newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title', 'url'], rex));
@@ -394,7 +416,7 @@ export class Player extends Component<any, PlayerState> {
     renderNowPlay() {
         const trackInfo = this.getCurrentTrack();
         return (
-            <div className="nowPlay">
+            <div className="nowPlay" onClick={()=>this.scrollToCurrentTrack()}>
                 {
                     trackInfo
                         ? <span className="npTitle">{this.getTrackLineName(trackInfo)}</span>
