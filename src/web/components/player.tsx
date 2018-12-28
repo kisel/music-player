@@ -89,13 +89,13 @@ class Slider extends Component<SliderProps, any> {
 interface PlayerState {
     tracks: TrackInfo[];
     displayedTracks: TrackInfo[]; // only set if there is a search, null otherwise
-    currentTrack: number; // index of tracks array
+    currentTrackId: number;
 }
 export class Player extends Component<any, PlayerState> {
     state = {
         tracks: [],
         displayedTracks: null,
-        currentTrack: 0,
+        currentTrackId: null,
     }
     refs: any;
     audio: any = null;
@@ -117,13 +117,18 @@ export class Player extends Component<any, PlayerState> {
             return;
         }
 
+        // circular
+        idx = (idx + tracks.length) % tracks.length;
+        if (!tracks[idx]) {
+            return;
+        }
 
         if (audio.currentTime > THRESHOLD_SKIP ) {
             this.consumePromise(playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.SKIP }));
         }
         const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
-        this.setState({currentTrack: idx});
+        this.setState({currentTrackId: trackInfo.id});
         console.log("playing", trackInfo);
         audio.play();
         this.updateMediaSession();
@@ -178,6 +183,9 @@ export class Player extends Component<any, PlayerState> {
     }
 
     deleteTrack = (id: number) => {
+        if (this.getCurrentTrackId() == id) {
+            this.nextTrack();
+        }
         this.consumePromise(playerConn.deleteTrack({id})) 
     }
 
@@ -235,32 +243,23 @@ export class Player extends Component<any, PlayerState> {
     }
 
     getCurrentTrack = () => {
-        return this.state.tracks[this.state.currentTrack];
+        return this.state.tracks.find(t=>t.id == this.state.currentTrackId);
+    }
+
+    getCurrentTrackIndex = () => {
+        return this.state.tracks.findIndex(t=>t.id == this.state.currentTrackId);
     }
 
     getCurrentTrackId = () => {
-        const currentTrackInfo = this.state.tracks[this.state.currentTrack];
-        return currentTrackInfo ? currentTrackInfo.id : null;
+        return this.state.currentTrackId;
     }
 
     nextTrack = () => {
-        const {tracks, currentTrack} = this.state;
-        if (!tracks) {
-            return;
-        }
-        this.playTrackByIndex((currentTrack + 1) % tracks.length);
+        this.playTrackByIndex((this.getCurrentTrackIndex() + 1))
     }
 
     prevTrack = () => {
-        const {tracks, currentTrack} = this.state;
-        if (!tracks) {
-            return;
-        }
-        if (currentTrack === 0) {
-            this.playTrackByIndex(tracks.length - 1); // last
-        } else {
-            this.playTrackByIndex(currentTrack - 1); // prev
-        }
+        this.playTrackByIndex(this.getCurrentTrackIndex() - 1); // prev
     }
 
     renderTrackInfo() {
@@ -315,7 +314,7 @@ export class Player extends Component<any, PlayerState> {
 
     shuffleAll = () => {
         this.stop();
-        this.setState({currentTrack: 0, tracks: shuffle(this.state.tracks)});
+        this.setState({tracks: shuffle(this.state.tracks)});
     }
 
     updateMediaSession = () => {
