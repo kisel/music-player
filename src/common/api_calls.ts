@@ -1,7 +1,8 @@
 import { TrackInfo } from './track';
 
 export const enum ApiEvents {
-    trackUpdated = 'TRACK_UPDATED',
+    HELLO = 'HELLO',
+    TRACK_UPDATED = 'TRACK_UPDATED',
 }
 
 export const enum TrackJournalEvtType {
@@ -30,5 +31,11 @@ export interface PlayerAPI {
 
     getSearchHistory(req: any): Promise<SearchExpression[]>;
     addSearchHistory(req: SearchExpression);
+}
+
+export interface ClientAPI {
+    hello();
+    tracksUpdated(modifTracks: TrackInfo[]);
+    tracksRemoved(deletedTrackIds: number[]);
 }
 

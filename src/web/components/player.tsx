@@ -2,7 +2,7 @@ import * as React from 'react'
 import {Component} from 'react'
 
 import { TrackJournalEvtType } from "../../common/api_calls";
-import { playerConn } from "../api";
+import { playerConn, clientAPI } from "../api";
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
@@ -141,17 +141,7 @@ export class Player extends Component<any, PlayerState> {
     }
 
     setRating = (trackInfo: TrackInfo, newRating: number) => {
-        const newTracks = this.state.tracks.map(track => {
-            if (trackInfo.id === track.id) {
-                return {...track, rating: newRating};
-            } else {
-                return track;
-            }
-        });
-        this.setState({tracks: newTracks});
-        playerConn.setTrackRating({id: trackInfo.id, rating: newRating}).then((res)=>{
-            console.log("Rating changed", res);
-        });
+        playerConn.setTrackRating({id: trackInfo.id, rating: newRating});
     }
 
     renderRating(trackInfo: TrackInfo) {
@@ -289,12 +279,12 @@ export class Player extends Component<any, PlayerState> {
     }
  
     onPause = (evt: any) => {
-        console.log(evt);
+        console.log('onPause');
         this.playing = false;
     }
 
     onPlay = (evt: any) => {
-        console.log(evt);
+        console.log('onPlay');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.PLAY })
         this.playing = true;
     }
@@ -306,11 +296,9 @@ export class Player extends Component<any, PlayerState> {
     }
 
     onEnded = (evt: any) => {
-        console.log(evt);
+        console.log('onEnded');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.END });
-        if (this.playing) {
-            this.nextTrack();
-        }
+        this.nextTrack();
     }
 
     onTimeUpdate = (evt: any) => {
@@ -348,7 +336,29 @@ export class Player extends Component<any, PlayerState> {
             navigator.mediaSession.setActionHandler('previoustrack', () => this.prevTrack() );
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack() );
         }
+
+        clientAPI.tracksUpdated = (modifTracks: TrackInfo[]) => {
+            let newTracks = {}
+            for (const track of modifTracks) {
+                newTracks[track.id] = track;
+            }
+            const patch = (tracks) => tracks ? tracks.map(t => newTracks[t.id] || t): null;
+            this.setState({
+                tracks: patch(this.state.tracks),
+                displayedTracks: patch(this.state.displayedTracks),
+            });
+        }
+
+        clientAPI.tracksRemoved = (deletedTrackIds) => {
+            const delSet = new Set(deletedTrackIds)
+            const patch = (tracks) => tracks ? tracks.filter(t => !delSet.has(t.id) ): null;
+            this.setState({
+                tracks: patch(this.state.tracks),
+                displayedTracks: patch(this.state.displayedTracks),
+            });
+        }
     }
+
     audioRef = (audio: any) => {
         if (this.audio) {
             this.audio.pause();

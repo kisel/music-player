@@ -1,17 +1,12 @@
 // TODO: replace with pure websocket rpc
 import * as io from 'socket.io-client';
 import { resolve } from 'url';
-import { PlayerAPI, TrackJournalEvtType} from '../common/api_calls';
+import { ApiEvents, PlayerAPI, TrackJournalEvtType, ClientAPI} from '../common/api_calls';
 import { TrackInfo } from '../common/track';
 
 const api = io('/', {
     // transports: ['websocket']
 });
-
-api.on('hello', function (data: any) {
-    console.log(data);
-    api.emit('my other event', { my: 'data' });
-  });
 
 
 function callRPC<T>(rpc: string, arg: any): Promise<T> {
@@ -31,5 +26,18 @@ export const playerConn = new Proxy({}, {
     }
 ) as PlayerAPI;
 
+// dead simple event emitter
+export const clientAPI: ClientAPI = {
+    hello: async () => { console.log('Connected!'); },
+    tracksUpdated: async(modifTracks) => {},
+    tracksRemoved: async(deletedTrackIds: number[]) => {},
+}
 
+// playerEvents references can change
+for (const key in clientAPI) {
+    api.on(key, (data) => {
+        clientAPI[key](data);
+        console.log('received event: ' + key, data)
+    });
+}
 
