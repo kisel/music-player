@@ -76,6 +76,11 @@ const api_handlers: PlayerAPI = {
         await SearchHistory.create(req);
     },
 
+    playTracks: (req) => clients.playTracks(req),
+    pausePlay: () => clients.pausePlay(),
+    setVolume: (req) => clients.setVolume(req),
+    seekTrackPos: (req) => clients.seekTrackPos(req),
+    reportStatus: (req) => clients.reportStatus(req),
 }
 
 io.on('connection', function (socket) {

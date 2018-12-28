@@ -6,6 +6,7 @@ import { playerConn, clientAPI } from "../api";
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
+import throttle = require('lodash/throttle');
 import {LocalStorage} from "../local_storage";
 import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
@@ -15,12 +16,16 @@ import { dumbAttribFilter } from "../../utils/filters";
 
 const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
 const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
+const sync_svg = require("@fortawesome/fontawesome-free/svgs/solid/sync.svg")
 
 const play_svg = require("@fortawesome/fontawesome-free/svgs/solid/play.svg")
 const pause_svg = require("@fortawesome/fontawesome-free/svgs/solid/pause.svg")
 const random_svg = require("@fortawesome/fontawesome-free/svgs/solid/random.svg")
 const next_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-forward.svg")
 const prev_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-backward.svg")
+const bullhorn_svg = require("@fortawesome/fontawesome-free/svgs/solid/bullhorn.svg")
+const wifi_svg = require("@fortawesome/fontawesome-free/svgs/solid/wifi.svg")
+const child_svg = require("@fortawesome/fontawesome-free/svgs/solid/child.svg")
 
 interface PlaylistProps {
     tracks: TrackInfo[];
@@ -33,9 +38,16 @@ const THRESHOLD_SKIP = 30;
 
 class Icon extends Component<any, any> {
     render() {
-        return <img {...this.props}/>
+        return <img className="btn" {...this.props}/>
     }
 }
+
+enum Mode {
+    STANDALONE='STANDALONE',
+    SLAVE='SLAVE',
+    MASTER='MASTER',
+}
+
 
 function getTrackFilename(trackInfo: TrackInfo) {
     const pattern = trackInfo.url;
@@ -108,18 +120,21 @@ interface PlayerState {
     tracks: TrackInfo[];
     displayedTracks: TrackInfo[]; // only set if there is a search, null otherwise
     currentTrackId: number;
+    mode: Mode;
+    playing: boolean;
 }
 export class Player extends Component<any, PlayerState> {
     state = {
         tracks: [],
         displayedTracks: null,
         currentTrackId: null,
+        mode: Mode.STANDALONE,
+        playing: false,
     }
     refs: any;
-    audio: any = null;
-    playing = false;
-    progressVol:any = null;
-    progressTrack: any = null;
+    audio: HTMLAudioElement = null;
+    sliderVol: Slider = null;
+    sliderTrack: Slider = null;
     playlist: any = null;
 
     fetchTracks = () => {
@@ -141,11 +156,16 @@ export class Player extends Component<any, PlayerState> {
         if (!tracks[idx]) {
             return;
         }
+        const trackInfo = tracks[idx];
+        const id = trackInfo.id;
 
+        if (this.getMode() == Mode.MASTER) {
+            playerConn.playTracks({trackId: id, tracks: this.getVisibleTracklist().map(t=>t.id)});
+            return;
+        }
         if (audio.currentTime > THRESHOLD_SKIP ) {
             this.consumePromise(playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.SKIP }));
         }
-        const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
         LocalStorage.setNumber('currentTrackId', trackInfo.id);
         this.setState({currentTrackId: trackInfo.id}, ()=>{
@@ -288,12 +308,12 @@ export class Player extends Component<any, PlayerState> {
         this.playTrackByIndex(this.getCurrentTrackIndex() - 1); // prev
     }
 
-    renderTrackInfo() {
-    }
-
     onTrackSeek = (val: number) => {
         if (this.audio) {
             this.audio.currentTime = val;
+        }
+        if (this.getMode() == Mode.MASTER) {
+            playerConn.seekTrackPos({position: val});
         }
     }
 
@@ -302,22 +322,26 @@ export class Player extends Component<any, PlayerState> {
             this.audio.volume = val;
             LocalStorage.setNumber('volume', val);
         }
+        if (this.getMode() == Mode.MASTER) {
+            playerConn.setVolume({volume: val});
+        }
+        this.sendPlayingStatus();
     }
  
     onPause = (evt: any) => {
         console.log('onPause');
-        this.playing = false;
+        this.setState({playing: false});
     }
 
     onPlay = (evt: any) => {
         console.log('onPlay');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.PLAY })
-        this.playing = true;
+        this.setState({playing: true});
     }
 
     onVolumeChange = (evt: any) => {
-        if (this.progressVol) {
-            this.progressVol.setState({val: this.audio.volume, max: 1});
+        if (this.sliderVol) {
+            this.sliderVol.setState({val: this.audio.volume, max: 1});
         }
     }
 
@@ -329,10 +353,11 @@ export class Player extends Component<any, PlayerState> {
 
     onTimeUpdate = (evt: any) => {
         //console.log(evt);
-        if (this.progressTrack) {
+        if (this.sliderTrack) {
             const {currentTime, duration} = this.audio;
-            this.progressTrack.setState({val: currentTime, max: duration});
+            this.sliderTrack.setState({val: currentTime, max: duration});
         }
+        this.sendPlayingStatus();
     }
 
     stop() {
@@ -341,7 +366,7 @@ export class Player extends Component<any, PlayerState> {
 
     shuffleAll = () => {
         this.setState({tracks: shuffle(this.state.tracks)}, ()=> {
-            if (!this.playing) {
+            if (!this.state.playing) {
                 this.playTrackByIndex(0);
             } else {
                 this.scrollToCurrentTrack()
@@ -358,6 +383,10 @@ export class Player extends Component<any, PlayerState> {
         if (this.playlist) {
             this.playlist.scrollToRow(idx);
         }
+    }
+
+    getMode = () => {
+        return this.state.mode || Mode.STANDALONE;
     }
 
     updateMediaSession = () => {
@@ -381,8 +410,12 @@ export class Player extends Component<any, PlayerState> {
 
         this.setState({
             currentTrackId: LocalStorage.getNumber('currentTrackId', null),
+            mode: LocalStorage.getString('mode', null) as Mode,
         });
+        this.initEvents();
+    }
 
+    initEvents() {
         clientAPI.tracksUpdated = (modifTracks: TrackInfo[]) => {
             let newTracks = {}
             for (const track of modifTracks) {
@@ -403,7 +436,61 @@ export class Player extends Component<any, PlayerState> {
                 displayedTracks: patch(this.state.displayedTracks),
             });
         }
+
+        clientAPI.playTracks = ({trackId, tracks, position}) => {
+            if (this.getMode() != Mode.SLAVE) {
+                return;
+            }
+            const set_tracks = new Set(tracks);
+            this.setState({displayedTracks: this.state.tracks.filter(t=>set_tracks.has(t.id))})
+            this.playTrackById(trackId);
+            if (this.audio && position) {
+                this.audio.currentTime = position;
+            }
+
+        }
+        clientAPI.setVolume = ({volume}) => {
+            if (this.audio) {
+                this.audio.volume = volume;
+            }
+        }
+
+        clientAPI.pausePlay = () => {
+            if (this.audio) {
+                this.audio.pause();
+            }
+        }
+
+        clientAPI.seekTrackPos = ({position}) => {
+            if (this.audio) {
+                this.audio.currentTime = position;
+            }
+        }
+
+        clientAPI.reportStatus = ({trackId, position, volume, playing, duration}) => {
+            if (this.getMode() == Mode.MASTER) {
+                this.sliderTrack.setState({val: position, max: duration})
+                this.sliderVol.setState({val: volume})
+                this.setState({playing, currentTrackId: trackId})
+            }
+        }
+
     }
+
+    _sendPlayingStatus = () => {
+        if (this.getMode() != Mode.SLAVE) {
+            return;
+        }
+        playerConn.reportStatus({
+            trackId: this.state.currentTrackId,
+            volume: this.audio ? this.audio.volume : null,
+            position: this.audio ? this.audio.currentTime : null,
+            duration: this.audio ? this.audio.duration : null,
+            playing: this.state.playing
+        })
+    }
+
+    sendPlayingStatus = throttle(this._sendPlayingStatus, 1000);
 
     playlistRef = (elem: any) => {
         this.playlist = elem;
@@ -417,15 +504,15 @@ export class Player extends Component<any, PlayerState> {
         this.audio.volume = LocalStorage.getNumber('volume', 1);
     }
 
-    progressVolumeRef = (elem: any) => {
-        this.progressVol = elem;
+    sliderVolumeRef = (elem: any) => {
+        this.sliderVol = elem;
         if (this.audio.volume) {
-            this.progressVol.setState({val: this.audio.volume, max:1 })
+            this.sliderVol.setState({val: this.audio.volume, max:1 })
         }
     }
 
-    progressTrackRef = (elem: any) => {
-        this.progressTrack = elem;
+    sliderTrackRef = (elem: any) => {
+        this.sliderTrack = elem;
     }
 
     playFirstVisibleTrack = () => {
@@ -457,7 +544,7 @@ export class Player extends Component<any, PlayerState> {
 
     renderDeleteTrackIcon(trackInfo: TrackInfo) {
         return (
-            <img src={trash_svg} title="Dbl-click to delete track" {...{onDblClick: ()=> this.deleteTrack(trackInfo.id)} }/>
+            <img src={trash_svg} title="Dbl-click to delete track" onDoubleClick={ ()=> this.deleteTrack(trackInfo.id) }/>
         );
     }
 
@@ -497,15 +584,26 @@ export class Player extends Component<any, PlayerState> {
         }
     }
 
+    changeMode(m: Mode) {
+        this.setState({mode: m});
+        LocalStorage.setString('mode', m);
+    }
+
     render() {
-        //<a id="btnLoadAll" onClick={this.loadAll}>ALL</a>
+        const {playing} = this.state;
+        const mode = this.getMode();
+        const modeBuilder = (m: Mode, icon: any) => {
+            return (
+                <Icon src={icon} className={classnames('btn', {active: mode == m}) } title={m} onClick={() =>this.changeMode(m) }/>
+            );
+        }
         return (
         <div className="player">
                 {this.renderPlaylist()}
                 <div className="player-footer">
                     {this.renderNowPlay()}
                     <div>
-                        <Slider ref={this.progressTrackRef} onValue={this.onTrackSeek}/>
+                        <Slider ref={this.sliderTrackRef} onValue={this.onTrackSeek}/>
                     </div>
                     <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
@@ -519,16 +617,22 @@ export class Player extends Component<any, PlayerState> {
                                 </audio>
                     </div>
                     <div className="playControls">
-                        <Icon className="btn" src={play_svg} onClick={this.onPlayClick}/>
-                        <Icon className="btn" src={pause_svg} onClick={()=>this.audio.pause()}/>
-                        <Icon className="btn" src={prev_svg} onClick={this.prevTrack}/>
-                        <Icon className="btn" src={next_svg} onClick={this.nextTrack}/>
-                        <Icon className="btn" src={random_svg} onClick={this.shuffleAll}/>
+                        { !playing
+                            ?  <Icon src={play_svg} onClick={this.onPlayClick}/>
+                            : <Icon src={pause_svg} onClick={()=>this.audio.pause()}/>
+                        }
+                        <Icon src={prev_svg} onClick={this.prevTrack}/>
+                        <Icon src={next_svg} onClick={this.nextTrack}/>
+                        <Icon src={random_svg} onClick={this.shuffleAll}/>
+                        <Icon src={sync_svg} onClick={this.fetchTracks}/>
+                        {modeBuilder(Mode.STANDALONE, child_svg)}
+                        {modeBuilder(Mode.MASTER, bullhorn_svg)}
+                        {modeBuilder(Mode.SLAVE, wifi_svg)}
                         <div className="filterGroup">
                           <input onInput={this.playlistFilterChange} onKeyDown={this.playlistFilterKeyDown} placeholder="filter..." />
                         </div>
                         <div className="spacer"/>
-                        <Slider className="volume_slider" ref={this.progressVolumeRef} onValue={this.onVolume} />
+                        <Slider className="volume_slider" ref={this.sliderVolumeRef} onValue={this.onVolume} />
                     </div>
                 </div>
         </div>

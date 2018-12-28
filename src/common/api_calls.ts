@@ -16,9 +16,17 @@ export interface TrackJournalEvt {
     evt: TrackJournalEvtType;
 }
 
-
 export interface SearchExpression {
     expression?: string;
+}
+
+export interface PlayerData {
+    trackId?: number;
+    position?: number; // track position
+    duration?: number; // track duration
+    tracks?: number[]; // loaded tracks
+    volume?: number;
+    playing?: boolean;
 }
 
 export interface PlayerAPI {
@@ -31,11 +39,29 @@ export interface PlayerAPI {
 
     getSearchHistory(req: any): Promise<SearchExpression[]>;
     addSearchHistory(req: SearchExpression);
+
+    // master functions
+    playTracks(req: PlayerData);
+    pausePlay();
+    setVolume(req: {volume: number});
+    seekTrackPos(req: {position: number});
+
+    //
+    reportStatus(req: PlayerData);
 }
 
 export interface ClientAPI {
     hello();
     tracksUpdated(modifTracks: TrackInfo[]);
     tracksRemoved(deletedTrackIds: number[]);
+
+    // slave functions
+    playTracks(req: PlayerData);
+    pausePlay();
+    setVolume(req: {volume: number});
+    seekTrackPos(req: {position: number});
+
+    //
+    reportStatus(req: PlayerData);
 }
 

@@ -26,6 +26,11 @@ display: none;
     height: 24px;
     cursor: pointer; /* Mouse pointer on hover */
     padding: 2px 2px;
+    filter: invert(60%);
+}
+
+img.btn.active {
+    color: blue;
     filter: invert(100%);
 }
 
