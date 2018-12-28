@@ -338,30 +338,30 @@ export class Player extends Component<any, PlayerState> {
         this.sendPlayingStatus();
     }
  
-    onPause = (evt: any) => {
+    onAudioPause = (evt: any) => {
         console.log('onPause');
         this.setState({playing: false});
     }
 
-    onPlay = (evt: any) => {
+    onAudioPlay = (evt: any) => {
         console.log('onPlay');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.PLAY })
         this.setState({playing: true});
     }
 
-    onVolumeChange = (evt: any) => {
+    onAudioVolumeChange = (evt: any) => {
         if (this.sliderVol) {
             this.sliderVol.setState({val: this.audio.volume, max: 1});
         }
     }
 
-    onEnded = (evt: any) => {
+    onAudioEnded = (evt: any) => {
         console.log('onEnded');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.END });
         this.nextTrack();
     }
 
-    onTimeUpdate = (evt: any) => {
+    onAudioTimeUpdate = (evt: any) => {
         //console.log(evt);
         if (this.sliderTrack) {
             const {currentTime, duration} = this.audio;
@@ -370,8 +370,12 @@ export class Player extends Component<any, PlayerState> {
         this.sendPlayingStatus();
     }
 
-    stop() {
-        this.audio.pause();
+    onPause = () => {
+        if (this.getMode() == Mode.MASTER) {
+            playerConn.pausePlay();
+        } else {
+            this.audio.pause();
+        }
     }
 
     shuffleAll = () => {
@@ -448,32 +452,36 @@ export class Player extends Component<any, PlayerState> {
         }
 
         clientAPI.playTracks = ({trackId, tracks, position}) => {
-            if (this.getMode() != Mode.SLAVE) {
-                return;
+            if (this.getMode() == Mode.SLAVE) {
+                const set_tracks = new Set(tracks);
+                this.setState({displayedTracks: this.state.tracks.filter(t=>set_tracks.has(t.id))})
+                this.playTrackById(trackId);
+                if (this.audio && position) {
+                    this.audio.currentTime = position;
+                }
             }
-            const set_tracks = new Set(tracks);
-            this.setState({displayedTracks: this.state.tracks.filter(t=>set_tracks.has(t.id))})
-            this.playTrackById(trackId);
-            if (this.audio && position) {
-                this.audio.currentTime = position;
-            }
-
         }
         clientAPI.setVolume = ({volume}) => {
-            if (this.audio) {
-                this.audio.volume = volume;
+            if (this.getMode() == Mode.SLAVE) {
+                if (this.audio) {
+                    this.audio.volume = volume;
+                }
             }
         }
 
         clientAPI.pausePlay = () => {
-            if (this.audio) {
-                this.audio.pause();
+            if (this.getMode() == Mode.SLAVE) {
+                if (this.audio) {
+                    this.audio.pause();
+                }
             }
         }
 
         clientAPI.seekTrackPos = ({position}) => {
-            if (this.audio) {
-                this.audio.currentTime = position;
+            if (this.getMode() == Mode.SLAVE) {
+                if (this.audio) {
+                    this.audio.currentTime = position;
+                }
             }
         }
 
@@ -617,11 +625,11 @@ export class Player extends Component<any, PlayerState> {
                     </div>
                     <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
-            onPlay={this.onPlay}
-            onPause={this.onPause}
-            onVolumeChange={this.onVolumeChange}
-            onTimeUpdate={this.onTimeUpdate}
-            onEnded={this.onEnded}
+            onPlay={this.onAudioPlay}
+            onPause={this.onAudioPause}
+            onVolumeChange={this.onAudioVolumeChange}
+            onTimeUpdate={this.onAudioTimeUpdate}
+            onEnded={this.onAudioEnded}
             >
                             Your browser does not support HTML5 Audio!
                                 </audio>
@@ -629,7 +637,7 @@ export class Player extends Component<any, PlayerState> {
                     <div className="playControls">
                         { !playing
                             ?  <Icon src={play_svg} onClick={this.onPlayClick}/>
-                            : <Icon src={pause_svg} onClick={()=>this.audio.pause()}/>
+                            : <Icon src={pause_svg} onClick={this.onPause}/>
                         }
                         <Icon src={prev_svg} onClick={this.prevTrack}/>
                         <Icon src={next_svg} onClick={this.nextTrack}/>
