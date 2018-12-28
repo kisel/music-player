@@ -144,23 +144,39 @@ export class Player extends Component<any, PlayerState> {
         });
     }
 
-    playTrackByIndex = (idx: number) => {
-        const {tracks} = this.state;
+    playTrackByIndex = ({idx, offset}: {idx?: number, offset?: number}) => {
+        const tracks = this.state.displayedTracks || this.state.tracks;
         const audio = this.audio;
-        if (!audio || !tracks || tracks.length == 0 || !tracks[idx]) {
+        if (!audio || !tracks || tracks.length == 0) {
             return;
         }
 
         // circular
-        idx = (idx + tracks.length) % tracks.length;
-        if (!tracks[idx]) {
+        idx = idx || tracks.findIndex(t=>t.id == this.state.currentTrackId);
+        if (idx == -1) {
+            // no current track seen in the playlist - just picking 1st
+            idx = 0;
+            offset = 0;
+        }
+        idx = (idx + tracks.length + (offset || 0)) % tracks.length;
+        const trackInfo = tracks[idx];
+        if (!trackInfo) {
             return;
         }
-        const trackInfo = tracks[idx];
-        const id = trackInfo.id;
+        this.playTrackById(trackInfo.id);
+    }
+
+    playTrackById = (trackId: number) => {
+        const {tracks} = this.state;
+        const audio = this.audio;
+        if (!audio || !tracks || tracks.length == 0) {
+            return;
+        }
+
+        const trackInfo = this.getTrackById(trackId);
 
         if (this.getMode() == Mode.MASTER) {
-            playerConn.playTracks({trackId: id, tracks: this.getVisibleTracklist().map(t=>t.id)});
+            playerConn.playTracks({trackId, tracks: this.getVisibleTracklist().map(t=>t.id)});
             return;
         }
         if (audio.currentTime > THRESHOLD_SKIP ) {
@@ -181,8 +197,6 @@ export class Player extends Component<any, PlayerState> {
         return idx == -1 ? 0 : idx;
     }
 
-    playTrackById = (id: number) => { this.playTrackByIndex(this.trackIdToIndex(id)); }
-;
     getTrackById = (id: number) => {
         return this.state.tracks.find(track=>track.id == id);
     }
@@ -288,10 +302,6 @@ export class Player extends Component<any, PlayerState> {
         return this.state.tracks.find(t=>t.id == this.state.currentTrackId);
     }
 
-    getCurrentTrackIndex = () => {
-        return this.state.tracks.findIndex(t=>t.id == this.state.currentTrackId);
-    }
-
     getVisibleTracklist = () => {
         return this.state.displayedTracks || this.state.tracks;
     }
@@ -301,11 +311,11 @@ export class Player extends Component<any, PlayerState> {
     }
 
     nextTrack = () => {
-        this.playTrackByIndex((this.getCurrentTrackIndex() + 1))
+        this.playTrackByIndex({offset: 1});
     }
 
     prevTrack = () => {
-        this.playTrackByIndex(this.getCurrentTrackIndex() - 1); // prev
+        this.playTrackByIndex({offset: -1}); // prev
     }
 
     onTrackSeek = (val: number) => {
@@ -367,7 +377,7 @@ export class Player extends Component<any, PlayerState> {
     shuffleAll = () => {
         this.setState({tracks: shuffle(this.state.tracks)}, ()=> {
             if (!this.state.playing) {
-                this.playTrackByIndex(0);
+                this.playFirstVisibleTrack();
             } else {
                 this.scrollToCurrentTrack()
             }
