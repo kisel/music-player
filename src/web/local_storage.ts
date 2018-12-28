@@ -23,8 +23,16 @@ export namespace LocalStorage {
         return localStorage[key] === trueString;
     }
 
-    export function getString(key: string, defVal: string = ''): string {
+    export function getString(key: string, defVal: string = null): string {
         return localStorage[key] || defVal;
+    }
+
+    export function setNumber(key: string, val: number) {
+        setString(key, `${val}`);
+    }
+    export function getNumber(key: string, defVal: number = null): number {
+        const val = getString(key);
+        return val ? parseFloat(val) : defVal;
     }
 
     export function getLocalStorage() {

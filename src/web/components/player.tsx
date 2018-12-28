@@ -6,6 +6,7 @@ import { playerConn, clientAPI } from "../api";
 import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
+import {LocalStorage} from "../local_storage";
 import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
@@ -146,6 +147,7 @@ export class Player extends Component<any, PlayerState> {
         }
         const trackInfo = tracks[idx];
         audio.src = trackInfo.url;
+        LocalStorage.setNumber('currentTrackId', trackInfo.id);
         this.setState({currentTrackId: trackInfo.id}, ()=>{
             this.scrollToCurrentTrack();
         });
@@ -298,6 +300,7 @@ export class Player extends Component<any, PlayerState> {
     onVolume = (val: number) => {
         if (this.audio) {
             this.audio.volume = val;
+            LocalStorage.setNumber('volume', val);
         }
     }
  
@@ -376,6 +379,10 @@ export class Player extends Component<any, PlayerState> {
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack() );
         }
 
+        this.setState({
+            currentTrackId: LocalStorage.getNumber('currentTrackId', null),
+        });
+
         clientAPI.tracksUpdated = (modifTracks: TrackInfo[]) => {
             let newTracks = {}
             for (const track of modifTracks) {
@@ -407,6 +414,7 @@ export class Player extends Component<any, PlayerState> {
             this.audio.pause();
         }
         this.audio = audio;
+        this.audio.volume = LocalStorage.getNumber('volume', 1);
     }
 
     progressVolumeRef = (elem: any) => {
@@ -480,7 +488,12 @@ export class Player extends Component<any, PlayerState> {
         if (audio && audio.src) {
             audio.play();
         } else {
-            this.nextTrack();
+            const trackId = this.getCurrentTrackId();
+            if (trackId) {
+                this.playTrackById(trackId);
+            } else {
+                this.nextTrack();
+            }
         }
     }
 
