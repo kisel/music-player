@@ -91,18 +91,17 @@ display: none;
     min-width: 50px;
 
     cursor: pointer; /* Mouse pointer on hover */
-    .slider_amount {
+
+    .slider_amount, .slider_back {
         //position: absolute;
         left: 0;
         height: 2px;
+    }
+    .slider_amount {
         background-color: #5181b8;
     }
     .slider_back {
-        //position: absolute;
-        left: 0;
-        height: 2px;
         background-color: #d1d6de;
-        width: 100%;
     }
 }
 
@@ -199,6 +198,27 @@ display: none;
     /* display: inline-flex;  on track hover*/
     display: none;
     align-items: center;
+}
+
+.nowPlay {
+    display: flex;
+    .spacer {
+        flex: 1;
+    }
+}
+.playnow-buttons {
+    display: inline-flex;
+    align-items: center;
+    >img {
+        width: 22px;
+        height: 22px;
+        margin-right: 10px;
+        filter: invert(40%);
+        &:hover {
+            filter: invert(100%);
+            transition: filter 350ms;
+        }
+    }
 }
 
 .track-buttons > img {

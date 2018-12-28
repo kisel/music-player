@@ -61,23 +61,40 @@ interface SliderProps {
     className?: string;
 }
 class Slider extends Component<SliderProps, any> {
+    slider: any = null;
+    active = false;
     state = {
         max: 1,
         val: 0,
     }
-    onClick = (e: any) => {
+    calcProc = (e)=> {
         const {max} = this.state;
-        const brect = e.target.getBoundingClientRect();
-        const value_selected = max * (e.clientX - brect.x) / brect.width;
-        if (this.props.onValue) {
-            this.props.onValue(value_selected);
+        const brect = this.slider.getBoundingClientRect();
+        return max * (e.clientX - brect.x) / brect.width;
+    }
+    onMove = (e: any) => {
+        if (this.active) {
+            //this.setState({val: this.calcProc(e)});
+            this.props.onValue(this.calcProc(e));
         }
+    }
+    onMouseDown = (e: any) => {
+        this.active = true;
+    }
+    onMouseUp = (e: any) => {
+        if (this.props.onValue) {
+            this.props.onValue(this.calcProc(e));
+        }
+        this.active = false;
+    }
+    sliderRef = (elem: any) => {
+        this.slider = elem;
     }
     render() {
         const {max, val} = this.state;
         const p = '' + 100 * (val / (max || 1)) + '%'
         return (
-            <div className={classnames(this.props.className, "slider")} onClick={this.onClick}>
+            <div ref={this.sliderRef} className={classnames(this.props.className, "slider")} onMouseUp={this.onMouseUp} onMouseMove={this.onMove} onMouseDown={this.onMouseDown}>
                 <div className="slider_back">
                     <div className="slider_amount" style={{width: p}}/>
                 </div>
@@ -321,7 +338,11 @@ export class Player extends Component<any, PlayerState> {
 
     shuffleAll = () => {
         this.setState({tracks: shuffle(this.state.tracks)}, ()=> {
-            this.scrollToCurrentTrack()
+            if (!this.playing) {
+                this.playTrackByIndex(0);
+            } else {
+                this.scrollToCurrentTrack()
+            }
         });
     }
 
@@ -399,6 +420,19 @@ export class Player extends Component<any, PlayerState> {
         this.progressTrack = elem;
     }
 
+    playFirstVisibleTrack = () => {
+        const tracks = this.getVisibleTracklist()
+        if (tracks && tracks[0]) {
+            this.playTrackById(tracks[0].id);
+        }
+    }
+        
+    playlistFilterKeyDown = ({key}) => {
+        if (key=='Enter') {
+            this.playFirstVisibleTrack();
+        }
+    }
+
     playlistFilterChange = ({target: {value}}: any) => {
         let newDisplayedTracks = this.state.tracks;
         if (value) {
@@ -413,6 +447,12 @@ export class Player extends Component<any, PlayerState> {
     }
     //playlistFilterChange = debounce(this._playlistFilterChange, 500);
 
+    renderDeleteTrackIcon(trackInfo: TrackInfo) {
+        return (
+            <img src={trash_svg} title="Dbl-click to delete track" {...{onDblClick: ()=> this.deleteTrack(trackInfo.id)} }/>
+        );
+    }
+
     renderNowPlay() {
         const trackInfo = this.getCurrentTrack();
         return (
@@ -422,11 +462,11 @@ export class Player extends Component<any, PlayerState> {
                         ? <span className="npTitle">{this.getTrackLineName(trackInfo)}</span>
                         : <span className="npTitle">-</span>
                 }
+                <div className="spacer"/>
+                <div className="playnow-buttons">
+                {trackInfo ? this.renderDeleteTrackIcon(trackInfo) : null}
+                </div>
                 {trackInfo ? this.renderRating(trackInfo) : null}
-
-            <div>
-            <Slider ref={this.progressTrackRef} onValue={this.onTrackSeek}/>
-            </div>
             </div>
         );
     }
@@ -451,6 +491,9 @@ export class Player extends Component<any, PlayerState> {
                 {this.renderPlaylist()}
                 <div className="player-footer">
                     {this.renderNowPlay()}
+                    <div>
+                        <Slider ref={this.progressTrackRef} onValue={this.onTrackSeek}/>
+                    </div>
                     <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
             onPlay={this.onPlay}
@@ -469,7 +512,7 @@ export class Player extends Component<any, PlayerState> {
                         <Icon className="btn" src={next_svg} onClick={this.nextTrack}/>
                         <Icon className="btn" src={random_svg} onClick={this.shuffleAll}/>
                         <div className="filterGroup">
-                          <input onInput={this.playlistFilterChange} placeholder="filter..." />
+                          <input onInput={this.playlistFilterChange} onKeyDown={this.playlistFilterKeyDown} placeholder="filter..." />
                         </div>
                         <div className="spacer"/>
                         <Slider className="volume_slider" ref={this.progressVolumeRef} onValue={this.onVolume} />
