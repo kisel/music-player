@@ -49,9 +49,12 @@ display: none;
 .playerWrapper {
     height: 100%;
     background-color: lightgrey;
-    text-align: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
 
     .playerWrapperInner {
+        flex: 1;
         max-width: 1024px;
         height: 100%;
         display: inline-block;
@@ -114,9 +117,10 @@ display: none;
 
 .filterGroup {
     display: flex;
-    width: 40em;
+    flex: 3;
+    width: 10em;
     input {
-        flex: 3;
+        flex: 1;
         background: transparent;
         border: 0;
         color: lightgreen;
@@ -131,7 +135,7 @@ display: none;
 
 
 .rating-stars {
-    color: yellow;
+    color: lightgreen;
     transition: color 350ms;
 
     &:hover {
