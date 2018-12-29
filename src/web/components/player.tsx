@@ -378,7 +378,15 @@ export class Player extends Component<any, PlayerState> {
         this.sendPlayingStatus();
     }
 
-    onPause = () => {
+    playPause = () => {
+        if (this.state.playing) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    pause = () => {
         if (this.getMode() == Mode.MASTER) {
             playerConn.pausePlay();
         } else {
@@ -593,15 +601,36 @@ export class Player extends Component<any, PlayerState> {
         );
     }
 
-    onKeyDown = (evt: KeyboardEvent) => {
-        console.log(evt.code, evt.key);
+    onPlayerKey = (evt) => {
+        console.log(evt.code, evt.key, evt);
+        const {key, altKey} = evt;
+        if (!altKey) {
+            return;
+        }
+        if (key == 'p') {
+            this.playPause();
+        }
+        if (key == 'n') {
+            this.nextTrack();
+        }
+        if (key == 'b') {
+            this.prevTrack();
+        }
+        for (let idx = 1; idx<=5; ++idx) {
+            if (key == `${idx}`) {
+                const {currentTrackId} = this.state;
+                if (currentTrackId) {
+                    playerConn.setTrackRating({id: currentTrackId, rating: idx});
+                }
+            }
+        }
     }
 
     showMessage = (msg: string) => {
         alert(msg);
     }
 
-    onPlayClick = (e: any) => {
+    play = () => {
         const audio = this.audio;
         if (audio && audio.src) {
             audio.play();
@@ -629,7 +658,7 @@ export class Player extends Component<any, PlayerState> {
             );
         }
         return (
-        <div className="player">
+        <div onKeyDown={this.onPlayerKey} className="player">
                 {this.renderPlaylist()}
                 <div className="player-footer">
                     {this.renderNowPlay()}
@@ -649,8 +678,8 @@ export class Player extends Component<any, PlayerState> {
                     </div>
                     <div className="playControls">
                         { !playing
-                            ?  <Icon src={play_svg} onClick={this.onPlayClick}/>
-                            : <Icon src={pause_svg} onClick={this.onPause}/>
+                            ?  <Icon src={play_svg} onClick={this.play}/>
+                            : <Icon src={pause_svg} onClick={this.pause}/>
                         }
                         <Icon src={prev_svg} onClick={this.prevTrack}/>
                         <Icon src={next_svg} onClick={this.nextTrack}/>
