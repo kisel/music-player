@@ -239,6 +239,14 @@ export class Player extends Component<any, PlayerState> {
     }
 
     deleteTrack = (id: number) => {
+        const track = this.getTrackById(id);
+        if (!track) {
+            return;
+        }
+        if (track.rating != 1) {
+            this.showMessage("Set rating to 1 before removing!");
+            return;
+        }
         if (this.getCurrentTrackId() == id) {
             this.nextTrack();
         }
@@ -562,7 +570,8 @@ export class Player extends Component<any, PlayerState> {
 
     renderDeleteTrackIcon(trackInfo: TrackInfo) {
         return (
-            <img src={trash_svg} title="Dbl-click to delete track" onDoubleClick={ ()=> this.deleteTrack(trackInfo.id) }/>
+            <img src={trash_svg} title="Dbl-click to delete track"
+                onClick={ ()=> this.deleteTrack(trackInfo.id) }/>
         );
     }
 
@@ -586,6 +595,10 @@ export class Player extends Component<any, PlayerState> {
 
     onKeyDown = (evt: KeyboardEvent) => {
         console.log(evt.code, evt.key);
+    }
+
+    showMessage = (msg: string) => {
+        alert(msg);
     }
 
     onPlayClick = (e: any) => {
