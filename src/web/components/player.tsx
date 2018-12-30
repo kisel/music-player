@@ -563,15 +563,38 @@ export class Player extends Component<any, PlayerState> {
     }
 
     playlistFilterChange = ({target: {value}}: any) => {
-        let newDisplayedTracks = this.state.tracks;
-        if (value) {
+        let newDisplayedTracks = null;
+        const ma = value.match(/(.*){(.*)}/);
+        const dumb_search = ma ? ma[1]: value;
+        let js_eval_search = null;
+        if (ma) {
+            js_eval_search = ma[2];
+        }
+
+        // multi-stage filtering. first dumb text filter, afterwards
+        newDisplayedTracks = this.state.tracks; 
+
+        if (dumb_search) {
             // allow searching by multiple attributes
             //const rex = buildFuzzySearch(value);
             //newDisplayedTracks = newDisplayedTracks.filter((track)=>matchInAttributes(track, ['artist', 'title', 'url'], rex));
-            newDisplayedTracks = dumbAttribFilter(newDisplayedTracks, value, ['artist', 'title', 'url']);
-        } else {
-            newDisplayedTracks = null;
+            newDisplayedTracks = dumbAttribFilter(newDisplayedTracks, dumb_search, ['artist', 'title', 'url']);
         }
+        if (js_eval_search) {
+            try {
+                // extremely safe operation
+                const filter_func = eval(`
+                        (track) => {
+                            const {artist, title, rating} = track;
+                            return (eval('${js_eval_search}'));
+                        }
+                    `)
+                newDisplayedTracks = newDisplayedTracks.filter(filter_func);
+            } catch(e) {
+                console.log('invalid search expr', e);
+            }
+        }
+
         this.setState({displayedTracks: newDisplayedTracks})
     }
     //playlistFilterChange = debounce(this._playlistFilterChange, 500);
