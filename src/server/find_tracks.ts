@@ -136,7 +136,7 @@ export function trackDumpFromDb(dbTrackInfo: TrackInfo): TrackInfo {
     let res = trackInfoFromDb(dbTrackInfo);
     const extras: (keyof TrackInfo)[] = [
         'playStart', 'playSkip', 'playEnd', 'lastPlayed', 'deleted'
-    ]
+    ];
     extras.forEach( e => res[e] = dbTrackInfo[e] );
     return res;
 }

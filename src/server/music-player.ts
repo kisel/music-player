@@ -1,5 +1,6 @@
 import program = require('commander');
 import { rescanLibrary } from "./find_tracks";
+import { migrateDB } from "./migrations";
 import { getConfig } from './config';
 
 rescanLibrary().then(()=>{
@@ -35,6 +36,13 @@ program
   .description('rescan music library')
   .action(function(cmd, options){
     rescanLibrary();
+  })
+
+program
+  .command('migrate')
+  .description('migrate database if needed')
+  .action(function(cmd, options){
+    migrateDB();
   })
 
 program.parse(process.argv);

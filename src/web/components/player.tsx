@@ -7,6 +7,7 @@ import { shuffle } from "../utils";
 import {TrackInfo} from '../../common/track'
 import debounce = require('lodash/debounce');
 import throttle = require('lodash/throttle');
+import _ = require('lodash');
 import {LocalStorage} from "../local_storage";
 import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
@@ -122,6 +123,7 @@ interface PlayerState {
     currentTrackId: number;
     mode: Mode;
     playing: boolean;
+    filterString?: string;
 }
 export class Player extends Component<any, PlayerState> {
     state = {
@@ -130,6 +132,7 @@ export class Player extends Component<any, PlayerState> {
         currentTrackId: null,
         mode: Mode.STANDALONE,
         playing: false,
+        filterString: '',
     }
     refs: any;
     audio: HTMLAudioElement = null;
@@ -140,7 +143,10 @@ export class Player extends Component<any, PlayerState> {
     fetchTracks = () => {
         playerConn.listTracks().then((tracks) => {
             console.log(tracks);
-            this.setState({ tracks: tracks, displayedTracks: null })
+            const filterString = LocalStorage.getString("filterString", "");
+            this.setState({ tracks: tracks, displayedTracks: null, filterString }, ()=>{
+                this.filterTracks(filterString)
+            })
         });
     }
 
@@ -562,14 +568,9 @@ export class Player extends Component<any, PlayerState> {
         }
     }
 
-    playlistFilterChange = ({target: {value}}: any) => {
+    filterTracks = (value: string) => {
         let newDisplayedTracks = null;
-        const ma = value.match(/(.*){(.*)}/);
-        const dumb_search = ma ? ma[1]: value;
-        let js_eval_search = null;
-        if (ma) {
-            js_eval_search = ma[2];
-        }
+        const [dumb_search, js_eval_search, sortBy] = value.split('/');
 
         // multi-stage filtering. first dumb text filter, afterwards
         newDisplayedTracks = this.state.tracks; 
@@ -586,6 +587,7 @@ export class Player extends Component<any, PlayerState> {
                 const filter_func = eval(`
                         (track) => {
                             const {artist, title, rating} = track;
+                            const r = rating;
                             return (eval('${js_eval_search}'));
                         }
                     `)
@@ -595,7 +597,21 @@ export class Player extends Component<any, PlayerState> {
             }
         }
 
+        if (sortBy) {
+            try {
+                newDisplayedTracks = _.sortBy(newDisplayedTracks, sortBy);
+            } catch(e) {
+                console.log('invalid search expr', e);
+            }
+        }
+
         this.setState({displayedTracks: newDisplayedTracks})
+    }
+
+    playlistFilterChange = ({target: {value}}: any) => {
+        LocalStorage.setString("filterString", value);
+        this.setState({filterString: value})
+        this.filterTracks(value);
     }
     //playlistFilterChange = debounce(this._playlistFilterChange, 500);
 
@@ -673,7 +689,7 @@ export class Player extends Component<any, PlayerState> {
     }
 
     render() {
-        const {playing} = this.state;
+        const {playing, filterString} = this.state;
         const mode = this.getMode();
         const modeBuilder = (m: Mode, icon: any) => {
             return (
@@ -712,7 +728,7 @@ export class Player extends Component<any, PlayerState> {
                         {modeBuilder(Mode.MASTER, bullhorn_svg)}
                         {modeBuilder(Mode.SLAVE, wifi_svg)}
                         <div className="filterGroup">
-                          <input onInput={this.playlistFilterChange} onKeyDown={this.playlistFilterKeyDown} placeholder="filter..." />
+                          <input onChange={this.playlistFilterChange} onKeyDown={this.playlistFilterKeyDown} placeholder="filter..." value={filterString} />
                         </div>
                         <div className="spacer"/>
                         <Slider className="volume_slider" ref={this.sliderVolumeRef} onValue={this.onVolume} />

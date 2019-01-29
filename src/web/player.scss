@@ -17,6 +17,18 @@ display: none;
 //     #nowPlay { display:none; }
 // }
 
+@media only screen and (max-width:1024px) {
+    .playerWrapper {
+        height: 100%;
+        width: 100%;
+
+        .playerWrapperInner {
+            max-width: auto;
+            height: 100%;
+            width: 100%;
+        }
+    }
+}
 
 .btn {
     border: none; /* Remove borders */
