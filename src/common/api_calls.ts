@@ -20,6 +20,11 @@ export interface SearchExpression {
     expression?: string;
 }
 
+export interface ConfigRecord {
+    key: string;
+    data: any;
+}
+
 export interface PlayerData {
     trackId?: number;
     position?: number; // track position
@@ -27,6 +32,15 @@ export interface PlayerData {
     tracks?: number[]; // loaded tracks
     volume?: number;
     playing?: boolean;
+}
+
+export interface ScanOptions {
+    dryRun: boolean;
+}
+
+export interface ScanResults {
+    added: TrackInfo[];
+    dryRun: boolean;
 }
 
 export interface PlayerAPI {
@@ -37,7 +51,7 @@ export interface PlayerAPI {
     getTrackInfoDump(req: {id: number});
     deleteTrack(req: {id: number});
 
-    rescanLibrary(req: any);
+    rescanLibrary(req: ScanOptions): Promise<ScanResults>;
 
     getSearchHistory(req: any): Promise<SearchExpression[]>;
     addSearchHistory(req: SearchExpression);

@@ -35,7 +35,7 @@ program
   .command('rescan')
   .description('rescan music library')
   .action(function(cmd, options){
-    rescanLibrary();
+    rescanLibrary({dryRun: false});
   })
 
 program

@@ -6,6 +6,8 @@ import * as readdir from 'recursive-readdir'
 import * as util from 'util'
 import { IAudioMetadata } from 'music-metadata/lib/type';
 import { getConfig, getUrlFromPath } from './config';
+import { promisify } from 'util';
+import { ScanOptions, ScanResults } from '../common/api_calls';
 const windows1251 = require('windows-1251');
 
 const fs_writeFile = util.promisify(fs.writeFile)
@@ -75,48 +77,56 @@ export function mmToTrack(path: string, meta: IAudioMetadata): TrackInfo {
         artist: meta.common.artist,
         title: meta.common.title,
         duration: meta.format.duration,
-        meta: meta,
         path: path,
     }
 }
 
-export async function importDirs(paths: string[]) {
+export async function importDirs(paths: string[], opt: ScanOptions): Promise<ScanResults> {
     let trackSet = new Set();
-    (await Tracks.all()).forEach(t => trackSet.add(t.path));
+    (await Tracks.all({})).forEach(t => trackSet.add(t.path));
+    const newTracks = [];
+    const dryRun = opt && opt.dryRun;
 
     for (const path of paths)  {
         console.log(`importing ${path}`)
         const files = (await readdir(path)).filter(isMp3);
         console.log(path, files.length);
-        const media_data = [];
         for (const file of files) {
 
             if (trackSet.has(file)) {
                 console.log(`Skipping ${file}`)
                 continue;
             } else {
+                trackSet.add(file); // just in case
                 console.log(`Adding ${file}`)
             }
 
             const meta = await mm.parseFile(file);
+            const mtime = await promisify(fs.stat)(file).then(s=>s.mtime);
             console.log(`${meta.common.artist} - ${meta.common.title}`);
-            media_data.push(mmToTrack(file, meta));
+            newTracks.push({...mmToTrack(file, meta), mtime});
         }
         //await fs_writeFile("data/mm.json", JSON.stringify(media_data), 'utf8');
-        await Tracks.bulkCreate(media_data);
+    }
+    if (!dryRun) {
+        await Tracks.bulkCreate(newTracks);
+    }
+    return {
+        added: newTracks,
+        dryRun,
     }
 }
 
 export let isScanningFlag = false;
 
-export async function rescanLibrary() {
+export async function rescanLibrary(opt?: ScanOptions) {
     try {
         if (isScanningFlag) {
             return;
         }
         isScanningFlag = true;
         await Tracks.sync();
-        await importDirs(getConfig().media_library);
+        return await importDirs(getConfig().media_library, opt);
     } finally {
         isScanningFlag = false;
     }

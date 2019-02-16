@@ -6,5 +6,5 @@ import { App } from './app';
 import 'react-virtualized/styles.css'
 import "./player.scss"
 
-render(<App/>, document.body)
+render(<App/>, document.getElementById("music-player-app"));
 

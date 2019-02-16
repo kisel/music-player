@@ -76,8 +76,8 @@ const api_handlers: PlayerAPI = {
         await SearchHistory.create(req);
     },
 
-    rescanLibrary: async () => {
-        rescanLibrary();
+    rescanLibrary: async (req) => {
+        return rescanLibrary(req);
     },
 
     playTracks: (req) => clients.playTracks(req),

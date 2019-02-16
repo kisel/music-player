@@ -9,6 +9,7 @@ export interface TrackInfo {
     artist?: string;
     url?: string;
     path?: string;
+    mtime?: Date; // file modified time
     rating?: number;
     meta?: any;
     playStart?: number; // count of started plays

@@ -1,6 +1,6 @@
 import * as Sequelize from 'sequelize';
 import { TrackInfo } from '../common/track';
-import { SearchExpression } from '../common/api_calls';
+import { SearchExpression, ConfigRecord } from '../common/api_calls';
 
 export function getDatabaseStorage() {
   return process.env['DATABASE'] || 'data/database.sqlite';
@@ -41,7 +41,8 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
   playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
   playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  lastPlayed: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+  lastPlayed: Sequelize.DATE,
+  mtime: Sequelize.DATE,
   deleted: Sequelize.DATE,
 }, {
     charset: 'utf8',
@@ -55,4 +56,7 @@ export const SearchHistory = sequelize.define<SearchExpression, any>('search_his
     collate: 'utf8_unicode_ci'
 });
 
-
+export const ConfigStorage = sequelize.define<ConfigRecord, any>('config', {
+  key: { type: Sequelize.STRING, unique: true, primaryKey: true },
+  data: Sequelize.JSON,
+});

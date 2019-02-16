@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+        "experimentalDecorators": true,
 		"outDir": "./app",
 		"target": "es6",
 		"moduleResolution": "node",
