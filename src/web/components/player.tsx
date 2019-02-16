@@ -12,7 +12,6 @@ import {LocalStorage} from "../local_storage";
 import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
-import { KeyboardEventHandler } from "react";
 import { dumbAttribFilter } from "../../utils/filters";
 
 const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
@@ -215,7 +214,7 @@ export class Player extends Component<any, PlayerState> {
         const rating = trackInfo.rating || 0;
         let res = [];
         for (let i=1; i<=5; ++i) {
-            res.push(<a key={i} onClick={() => this.setRating(trackInfo, i)}>{(i <= rating) ? "\u2605" : "\u2606"}</a>);
+            res.push(<a key={i} className={(i <= rating) ? "active" : null} onClick={() => this.setRating(trackInfo, i)}>{(i <= rating) ? "\u2605" : "\u2606"}</a>);
         }
         return (
             <div className="rating-stars">

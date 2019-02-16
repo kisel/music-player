@@ -1,6 +1,6 @@
 html,body {
-    background-color:#161a1d;
-    color:#fff;
+    background-color:#f2f2f2;
+    color: black;
     font-family: arial;
     height: 100%;
     width: 100%;
@@ -32,7 +32,7 @@ display: none;
 
 .btn {
     border: none; /* Remove borders */
-    color: white; /* White text */
+    color: black; /* White text */
     //font-size: 16px; /* Set a font size */
     width: 24px;
     height: 24px;
@@ -80,14 +80,14 @@ img.btn.active {
 }
 
 .player {
-    background-color:#161a1d;
+    background-color:#f2f2f2;
     font-weight: 300;
     display: flex;
     height: 100%;
     flex-direction: column;
     .playlist-container {
         flex-grow: 1;
-        box-shadow: 0 0 3px cyan;
+        box-shadow: 0 0 3px grey;
     }
     user-select: none;
 }
@@ -140,13 +140,13 @@ img.btn.active {
         flex: 1;
         background: transparent;
         border: 0;
-        color: lightgreen;
+        color: green;
         margin-left: 10px;
         margin-right: 10px;
     }
 
     &:active {
-        box-shadow: 0 0 3px white;
+        box-shadow: 0 0 3px black;
     }
 }
 
@@ -155,12 +155,16 @@ img.btn.active {
     color: lightgreen;
     transition: color 350ms;
 
+    .active {
+        color: green;
+    }
+
     &:hover {
         color: green;
     }
 
     > a:hover ~ a{
-        color: yellow;
+        color: lightgray;
     }
 }
 
@@ -171,10 +175,11 @@ img.btn.active {
 .playlist-track {
     display: flex;
     height: 40px;
+    background-color: #fff;
 
     &.playing {
         background-color: coral !important;
-        color:#fff;
+        color:black;
         cursor:default !important;
     }
 
@@ -201,7 +206,11 @@ img.btn.active {
 
     .artist {
         font-weight: 300 !important;
-        color: #5d5d5d !important;
+        color: #999 !important;
+    }
+
+    .title {
+        color: #666 !important;
     }
 
 }
@@ -232,7 +241,7 @@ img.btn.active {
         margin-right: 10px;
         filter: invert(40%);
         &:hover {
-            filter: invert(100%);
+            filter: invert(70%);
             transition: filter 350ms;
         }
     }
@@ -244,7 +253,7 @@ img.btn.active {
     filter: invert(40%);
     padding: 12px;
     &:hover {
-        filter: invert(100%);
+        filter: invert(70%);
     }
 }
 
