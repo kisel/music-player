@@ -43,7 +43,7 @@ display: none;
 
 img.btn.active {
     color: blue;
-    filter: invert(100%);
+    filter: invert(20%);
 }
 
 .btn:hover {
@@ -152,7 +152,7 @@ img.btn.active {
 
 
 .rating-stars {
-    color: lightgreen;
+    color: lightgray;
     transition: color 350ms;
 
     .active {
@@ -239,9 +239,9 @@ img.btn.active {
         width: 22px;
         height: 22px;
         margin-right: 10px;
-        filter: invert(40%);
+        filter: invert(70%);
         &:hover {
-            filter: invert(70%);
+            filter: invert(40%);
             transition: filter 350ms;
         }
     }

@@ -3,7 +3,7 @@ var express = require('express');
 import * as socketio from 'socket.io';
 import { ApiEvents, PlayerAPI, TrackJournalEvtType, SearchExpression, ClientAPI } from '../common/api_calls';
 import { Tracks, SearchHistory } from './database';
-import { initializeDatabase, trackInfoFromDb, trackDumpFromDb } from './find_tracks';
+import { initializeDatabase, trackInfoFromDb, trackDumpFromDb, rescanLibrary } from './find_tracks';
 import { TrackInfo } from '../common/track';
 import * as Sequelize from 'sequelize';
 
@@ -74,6 +74,10 @@ const api_handlers: PlayerAPI = {
 
     addSearchHistory: async (req: SearchExpression) => {
         await SearchHistory.create(req);
+    },
+
+    rescanLibrary: async () => {
+        rescanLibrary();
     },
 
     playTracks: (req) => clients.playTracks(req),

@@ -37,6 +37,8 @@ export interface PlayerAPI {
     getTrackInfoDump(req: {id: number});
     deleteTrack(req: {id: number});
 
+    rescanLibrary(req: any);
+
     getSearchHistory(req: any): Promise<SearchExpression[]>;
     addSearchHistory(req: SearchExpression);
 

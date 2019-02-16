@@ -107,9 +107,19 @@ export async function importDirs(paths: string[]) {
     }
 }
 
+export let isScanningFlag = false;
+
 export async function rescanLibrary() {
-    await Tracks.sync();
-    await importDirs(getConfig().media_library);
+    try {
+        if (isScanningFlag) {
+            return;
+        }
+        isScanningFlag = true;
+        await Tracks.sync();
+        await importDirs(getConfig().media_library);
+    } finally {
+        isScanningFlag = false;
+    }
 }
 
 const RE_BAD_UNICODE=/[\u007E-\u00ff]/

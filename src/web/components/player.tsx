@@ -1,5 +1,4 @@
 import * as React from 'react'
-import {Component} from 'react'
 
 import { TrackJournalEvtType } from "../../common/api_calls";
 import { playerConn, clientAPI } from "../api";
@@ -13,10 +12,12 @@ import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
 import * as classnames from 'classnames';
 import { dumbAttribFilter } from "../../utils/filters";
+import { Slider } from './slider';
+import { PlayerOptions } from './options';
 
 const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
 const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
-const sync_svg = require("@fortawesome/fontawesome-free/svgs/solid/sync.svg")
+const bolt_svg = require("@fortawesome/fontawesome-free/svgs/solid/bolt.svg")
 
 const play_svg = require("@fortawesome/fontawesome-free/svgs/solid/play.svg")
 const pause_svg = require("@fortawesome/fontawesome-free/svgs/solid/pause.svg")
@@ -27,19 +28,12 @@ const bullhorn_svg = require("@fortawesome/fontawesome-free/svgs/solid/bullhorn.
 const wifi_svg = require("@fortawesome/fontawesome-free/svgs/solid/wifi.svg")
 const child_svg = require("@fortawesome/fontawesome-free/svgs/solid/child.svg")
 
-interface PlaylistProps {
-    tracks: TrackInfo[];
-    playTrack: (TrackInfo)=>void;
-}
-
 declare var navigator: any;
 declare var MediaMetadata: any;
 const THRESHOLD_SKIP = 30;
 
-class Icon extends Component<any, any> {
-    render() {
-        return <img className="btn" {...this.props}/>
-    }
+function Icon(props: any) {
+    return <img className="btn" {...props} />
 }
 
 enum Mode {
@@ -68,53 +62,9 @@ function formatDuration(duration: number) {
     }
 }
 
-
-interface SliderProps {
-    onValue?(val: number);
-    className?: string;
+export interface PlayerProps {
+    showOptions: ()=>void;
 }
-class Slider extends Component<SliderProps, any> {
-    slider: any = null;
-    active = false;
-    state = {
-        max: 1,
-        val: 0,
-    }
-    calcProc = (e)=> {
-        const {max} = this.state;
-        const brect = this.slider.getBoundingClientRect();
-        return max * (e.clientX - brect.x) / brect.width;
-    }
-    onMove = (e: any) => {
-        if (this.active) {
-            //this.setState({val: this.calcProc(e)});
-            this.props.onValue(this.calcProc(e));
-        }
-    }
-    onMouseDown = (e: any) => {
-        this.active = true;
-    }
-    onMouseUp = (e: any) => {
-        if (this.props.onValue) {
-            this.props.onValue(this.calcProc(e));
-        }
-        this.active = false;
-    }
-    sliderRef = (elem: any) => {
-        this.slider = elem;
-    }
-    render() {
-        const {max, val} = this.state;
-        const p = '' + 100 * (val / (max || 1)) + '%'
-        return (
-            <div ref={this.sliderRef} className={classnames(this.props.className, "slider")} onMouseUp={this.onMouseUp} onMouseMove={this.onMove} onMouseDown={this.onMouseDown}>
-                <div className="slider_back">
-                    <div className="slider_amount" style={{width: p}}/>
-                </div>
-            </div>
-        )
-    }
-};
 
 interface PlayerState {
     tracks: TrackInfo[];
@@ -124,7 +74,7 @@ interface PlayerState {
     playing: boolean;
     filterString?: string;
 }
-export class Player extends Component<any, PlayerState> {
+export class Player extends React.Component<PlayerProps, PlayerState> {
     state = {
         tracks: [],
         displayedTracks: null,
@@ -540,12 +490,14 @@ export class Player extends Component<any, PlayerState> {
             this.audio.pause();
         }
         this.audio = audio;
-        this.audio.volume = LocalStorage.getNumber('volume', 1);
+        if (this.audio) {
+            this.audio.volume = LocalStorage.getNumber('volume', 1);
+        }
     }
 
     sliderVolumeRef = (elem: any) => {
         this.sliderVol = elem;
-        if (this.audio.volume) {
+        if (this.audio && this.audio.volume) {
             this.sliderVol.setState({val: this.audio.volume, max:1 })
         }
     }
@@ -648,6 +600,9 @@ export class Player extends Component<any, PlayerState> {
         if (key == 'p') {
             this.playPause();
         }
+        if (key == 'o') {
+            this.props.showOptions();
+        }
         if (key == 'n') {
             this.nextTrack();
         }
@@ -705,14 +660,14 @@ export class Player extends Component<any, PlayerState> {
                     </div>
                     <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
-            onPlay={this.onAudioPlay}
-            onPause={this.onAudioPause}
-            onVolumeChange={this.onAudioVolumeChange}
-            onTimeUpdate={this.onAudioTimeUpdate}
-            onEnded={this.onAudioEnded}
-            >
+                            onPlay={this.onAudioPlay}
+                            onPause={this.onAudioPause}
+                            onVolumeChange={this.onAudioVolumeChange}
+                            onTimeUpdate={this.onAudioTimeUpdate}
+                            onEnded={this.onAudioEnded}
+                        >
                             Your browser does not support HTML5 Audio!
-                                </audio>
+                        </audio>
                     </div>
                     <div className="playControls">
                         { !playing
@@ -722,7 +677,7 @@ export class Player extends Component<any, PlayerState> {
                         <Icon src={prev_svg} onClick={this.prevTrack}/>
                         <Icon src={next_svg} onClick={this.nextTrack}/>
                         <Icon src={random_svg} onClick={this.shuffleAll}/>
-                        <Icon src={sync_svg} onClick={this.fetchTracks}/>
+                        <Icon src={bolt_svg} onClick={this.props.showOptions}/>
                         {modeBuilder(Mode.STANDALONE, child_svg)}
                         {modeBuilder(Mode.MASTER, bullhorn_svg)}
                         {modeBuilder(Mode.SLAVE, wifi_svg)}
