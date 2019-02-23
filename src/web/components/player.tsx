@@ -14,100 +14,68 @@ import * as classnames from 'classnames';
 import { dumbAttribFilter } from "../../utils/filters";
 import { Slider } from './slider';
 import { PlayerOptions } from './options';
+import { PlayerCtx, Mode, PlayerStore } from '../appstore';
+import { formatDuration, getTrackLineName } from './format';
+import { trash_svg, Icon, play_svg, pause_svg, prev_svg, next_svg, random_svg, bolt_svg, child_svg, bullhorn_svg, wifi_svg } from '../icons';
+import { Observer, observer } from 'mobx-react-lite';
+import { Playlist } from './playlist';
+import { PlayControls } from './play_controls';
+import { runInAction } from 'mobx';
+import { initPlayer } from './startup';
+import { Rating } from './rating';
+import { PlayerController, PlayerControllerCtx } from './player_controller';
+import { TrackDelete } from './track_delete';
 
-const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
-const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
-const bolt_svg = require("@fortawesome/fontawesome-free/svgs/solid/bolt.svg")
-
-const play_svg = require("@fortawesome/fontawesome-free/svgs/solid/play.svg")
-const pause_svg = require("@fortawesome/fontawesome-free/svgs/solid/pause.svg")
-const random_svg = require("@fortawesome/fontawesome-free/svgs/solid/random.svg")
-const next_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-forward.svg")
-const prev_svg = require("@fortawesome/fontawesome-free/svgs/solid/step-backward.svg")
-const bullhorn_svg = require("@fortawesome/fontawesome-free/svgs/solid/bullhorn.svg")
-const wifi_svg = require("@fortawesome/fontawesome-free/svgs/solid/wifi.svg")
-const child_svg = require("@fortawesome/fontawesome-free/svgs/solid/child.svg")
 
 declare var navigator: any;
 declare var MediaMetadata: any;
 const THRESHOLD_SKIP = 30;
 
-function Icon(props: any) {
-    return <img className="btn" {...props} />
-}
-
-enum Mode {
-    STANDALONE='STANDALONE',
-    SLAVE='SLAVE',
-    MASTER='MASTER',
-}
-
-
-function getTrackFilename(trackInfo: TrackInfo) {
-    const pattern = trackInfo.url;
-    if (!pattern) {
-        return "";
-    }
-    return pattern.replace(/.*[\\\/]/, '').replace(/.mp3$/i, '');
-}
-
-function formatDuration(duration: number) {
-    const sec = Math.floor(duration);
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    if (s < 10) {
-        return `${m}:0${s}`;
-    } else {
-        return `${m}:${s}`;
-    }
-}
-
 export interface PlayerProps {
-    showOptions: ()=>void;
+    store: PlayerStore;
 }
 
-interface PlayerState {
-    tracks: TrackInfo[];
-    displayedTracks: TrackInfo[]; // only set if there is a search, null otherwise
-    currentTrackId: number;
-    mode: Mode;
-    playing: boolean;
-    filterString?: string;
-}
-export class Player extends React.Component<PlayerProps, PlayerState> {
-    state = {
-        tracks: [],
-        displayedTracks: null,
-        currentTrackId: null,
-        mode: Mode.STANDALONE,
-        playing: false,
-        filterString: '',
-    }
-    refs: any;
+export const Player = observer(()=>{
+    const store = React.useContext(PlayerCtx);
+    return <PlayerImpl store={store}/>
+})
+
+export const NowPlay = observer(()=>{
+    const store = React.useContext(PlayerCtx);
+    const ctrl = React.useContext(PlayerControllerCtx);
+    const {currentTrack: trackInfo} = store;
+    return (
+        <div className="nowPlay" onClick={()=>ctrl.scrollToCurrentTrack()}>
+            {
+                trackInfo
+                    ? <span className="npTitle">{getTrackLineName(trackInfo)}</span>
+                    : <span className="npTitle">-</span>
+            }
+            <div className="spacer"/>
+            <div className="playnow-buttons">
+            {trackInfo ? <TrackDelete trackId={trackInfo.id} /> : null}
+            </div>
+            {trackInfo ? <Rating trackInfo={trackInfo}/> : null}
+        </div>
+    );
+});
+
+export class PlayerImpl extends React.Component<PlayerProps, {}> {
+    state: {};
+
     audio: HTMLAudioElement = null;
     sliderVol: Slider = null;
     sliderTrack: Slider = null;
     playlist: any = null;
-
-    fetchTracks = () => {
-        playerConn.listTracks().then((tracks) => {
-            console.log(tracks);
-            const filterString = LocalStorage.getString("filterString", "");
-            this.setState({ tracks: tracks, displayedTracks: null, filterString }, ()=>{
-                this.filterTracks(filterString)
-            })
-        });
-    }
-
     playTrackByIndex = ({idx, offset}: {idx?: number, offset?: number}) => {
-        const tracks = this.state.displayedTracks || this.state.tracks;
+        const tracks = this.props.store.displayedTracks || this.props.store.tracks;
         const audio = this.audio;
         if (!audio || !tracks || tracks.length == 0) {
             return;
         }
 
         // circular
-        idx = idx || tracks.findIndex(t=>t.id == this.state.currentTrackId);
+        idx = idx || tracks.findIndex(t=>t.id == this.props.store.currentTrackId);
         if (idx == -1) {
             // no current track seen in the playlist - just picking 1st
             idx = 0;
@@ -122,7 +90,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
     }
 
     playTrackById = (trackId: number) => {
-        const {tracks} = this.state;
+        const {tracks} = this.props.store;
         const audio = this.audio;
         if (!audio || !tracks || tracks.length == 0) {
             return;
@@ -139,52 +107,24 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         }
         audio.src = trackInfo.url;
         LocalStorage.setNumber('currentTrackId', trackInfo.id);
-        this.setState({currentTrackId: trackInfo.id}, ()=>{
-            this.scrollToCurrentTrack();
+
+        runInAction(()=>{
+            this.props.store.currentTrackId = trackInfo.id;
         });
+        this.scrollToCurrentTrack();
+
         console.log("playing", trackInfo);
         audio.play();
         this.updateMediaSession();
     }
 
     trackIdToIndex = (id: number) => {
-        const idx = this.state.tracks.findIndex(track=>track.id == id);
+        const idx = this.props.store.tracks.findIndex(track=>track.id == id);
         return idx == -1 ? 0 : idx;
     }
 
     getTrackById = (id: number) => {
-        return this.state.tracks.find(track=>track.id == id);
-    }
-
-    setRating = (trackInfo: TrackInfo, newRating: number) => {
-        playerConn.setTrackRating({id: trackInfo.id, rating: newRating});
-    }
-
-    renderRating(trackInfo: TrackInfo) {
-        const rating = trackInfo.rating || 0;
-        let res = [];
-        for (let i=1; i<=5; ++i) {
-            res.push(<a key={i} className={(i <= rating) ? "active" : null} onClick={() => this.setRating(trackInfo, i)}>{(i <= rating) ? "\u2605" : "\u2606"}</a>);
-        }
-        return (
-            <div className="rating-stars">
-                {res}
-            </div>
-        )
-    }
-
-    getTrackTitle(trackInfo: TrackInfo) {
-        const {artist, title, duration, id} = trackInfo;
-        return title || getTrackFilename(trackInfo);
-    }
-
-    getTrackLineName(trackInfo: TrackInfo) {
-        const {artist, title, duration, id} = trackInfo;
-        if (artist && title) {
-            return `${artist} - ${title}`
-        } else {
-            return getTrackFilename(trackInfo);
-        }
+        return this.props.store.tracks.find(track=>track.id == id);
     }
 
     showTrackInfo = (id: number) => {
@@ -212,65 +152,16 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         p.catch(() => console.log("Unhandled promise"))
     }
 
-    renderPlaylist() {
-        let {tracks, displayedTracks} = this.state;
-        const currentTrackId = this.getCurrentTrackId();
-        const playlist = displayedTracks || tracks;
-        const rowRenderer = ({index, key, style}: any) => {
-            const trackInfo = playlist[index];
-            const {artist, title, duration, id} = trackInfo;
-            return (
-                <div key={key} style={style} className={classnames("playlist-track", {"playing": id == currentTrackId})}>
-                    <div className="track-info" onClick={() => this.playTrackById(id)}>
-                        <div className="artist">
-                        {artist || "Unknown"}
-                        </div>
-                        <div className="title">
-                        {(artist && title) || getTrackFilename(trackInfo)}
-                        </div>
-                    </div>
-                    <div className="track-buttons">
-                    <img src={info_svg} onClick={() => this.showTrackInfo(id) }/>
-                    <img src={trash_svg} onClick={()=> this.deleteTrack(id) }/>
-                    </div>
-                    <div className="track-stats">
-                    {this.renderRating(trackInfo)}
-                    <div className="duration">
-                        {formatDuration(duration)}
-                    </div>
-                    </div>
-                </div>
-            )
-        }
-        const list = ({ height, width }) => (
-            <List ref={this.playlistRef}
-                className="playlist"
-                autoHeight={false}
-                width={width}
-                height={height}
-                rowHeight={40}
-                rowCount={playlist.length}
-                rowRenderer={rowRenderer}
-            />
-        );
-
-        return (
-            <div className="playlist-container">
-              <AutoSizer children={list}/>
-            </div>
-        );
-    }
-
     getCurrentTrack = () => {
-        return this.state.tracks.find(t=>t.id == this.state.currentTrackId);
+        return this.props.store.currentTrack;
     }
 
     getVisibleTracklist = () => {
-        return this.state.displayedTracks || this.state.tracks;
+        return this.props.store.displayedTracks || this.props.store.tracks;
     }
 
     getCurrentTrackId = () => {
-        return this.state.currentTrackId;
+        return this.props.store.currentTrackId;
     }
 
     nextTrack = () => {
@@ -290,7 +181,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         }
     }
 
-    onVolume = (val: number) => {
+    setVolume = (val: number) => {
         if (this.audio) {
             this.audio.volume = val;
             LocalStorage.setNumber('volume', val);
@@ -303,13 +194,13 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
  
     onAudioPause = (evt: any) => {
         console.log('onPause');
-        this.setState({playing: false});
+        this.props.store.playing = false;
     }
 
     onAudioPlay = (evt: any) => {
         console.log('onPlay');
         playerConn.trackJournal({id: this.getCurrentTrackId(), evt: TrackJournalEvtType.PLAY })
-        this.setState({playing: true});
+        this.props.store.playing = true;
     }
 
     onAudioVolumeChange = (evt: any) => {
@@ -334,7 +225,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
     }
 
     playPause = () => {
-        if (this.state.playing) {
+        if (this.props.store.playing) {
             this.pause();
         } else {
             this.play();
@@ -350,13 +241,13 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
     }
 
     shuffleAll = () => {
-        this.setState({tracks: shuffle(this.state.tracks)}, ()=> {
-            if (!this.state.playing) {
-                this.playFirstVisibleTrack();
-            } else {
-                this.scrollToCurrentTrack()
-            }
-        });
+        const {store} = this.props;
+        store.tracks = shuffle(store.tracks);
+        if (!this.props.store.playing) {
+            this.playFirstVisibleTrack();
+        } else {
+            this.scrollToCurrentTrack()
+        }
     }
 
     scrollToCurrentTrack = () => {
@@ -371,7 +262,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
     }
 
     getMode = () => {
-        return this.state.mode || Mode.STANDALONE;
+        return this.props.store.mode || Mode.STANDALONE;
     }
 
     updateMediaSession = () => {
@@ -387,45 +278,41 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
 
     }
     componentDidMount()  {
-        this.fetchTracks();
         if (navigator && navigator.mediaSession) {
             navigator.mediaSession.setActionHandler('previoustrack', () => this.prevTrack() );
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack() );
         }
-
-        this.setState({
-            currentTrackId: LocalStorage.getNumber('currentTrackId', null),
-            mode: LocalStorage.getString('mode', null) as Mode,
-        });
+        initPlayer();
         this.initEvents();
     }
 
     initEvents() {
+        const store = this.props.store;
         clientAPI.tracksUpdated = (modifTracks: TrackInfo[]) => {
             let newTracks = {}
             for (const track of modifTracks) {
                 newTracks[track.id] = track;
             }
             const patch = (tracks) => tracks ? tracks.map(t => newTracks[t.id] || t): null;
-            this.setState({
-                tracks: patch(this.state.tracks),
-                displayedTracks: patch(this.state.displayedTracks),
-            });
+            runInAction(()=>{
+                store.tracks = patch(store.tracks);
+                store.displayedTracks = patch(store.displayedTracks);
+            })
         }
 
         clientAPI.tracksRemoved = (deletedTrackIds) => {
             const delSet = new Set(deletedTrackIds)
             const patch = (tracks) => tracks ? tracks.filter(t => !delSet.has(t.id) ): null;
-            this.setState({
-                tracks: patch(this.state.tracks),
-                displayedTracks: patch(this.state.displayedTracks),
-            });
+            runInAction(()=>{
+                store.tracks = patch(store.tracks);
+                store.displayedTracks = patch(store.displayedTracks);
+            })
         }
 
         clientAPI.playTracks = ({trackId, tracks, position}) => {
             if (this.getMode() == Mode.SLAVE) {
                 const set_tracks = new Set(tracks);
-                this.setState({displayedTracks: this.state.tracks.filter(t=>set_tracks.has(t.id))})
+                store.displayedTracks = store.tracks.filter(t=>set_tracks.has(t.id));
                 this.playTrackById(trackId);
                 if (this.audio && position) {
                     this.audio.currentTime = position;
@@ -460,7 +347,10 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
             if (this.getMode() == Mode.MASTER) {
                 this.sliderTrack.setState({val: position, max: duration})
                 this.sliderVol.setState({val: volume})
-                this.setState({playing, currentTrackId: trackId})
+                runInAction(()=>{
+                    store.currentTrackId = trackId;
+                    store.playing = playing;
+                })
             }
         }
 
@@ -471,11 +361,11 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
             return;
         }
         playerConn.reportStatus({
-            trackId: this.state.currentTrackId,
+            trackId: this.props.store.currentTrackId,
             volume: this.audio ? this.audio.volume : null,
             position: this.audio ? this.audio.currentTime : null,
             duration: this.audio ? this.audio.duration : null,
-            playing: this.state.playing
+            playing: this.props.store.playing
         })
     }
 
@@ -524,7 +414,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         const [dumb_search, js_eval_search, sortBy] = value.split('/');
 
         // multi-stage filtering. first dumb text filter, afterwards
-        newDisplayedTracks = this.state.tracks; 
+        newDisplayedTracks = this.props.store.tracks; 
 
         if (dumb_search) {
             // allow searching by multiple attributes
@@ -556,40 +446,15 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
             }
         }
 
-        this.setState({displayedTracks: newDisplayedTracks})
+        runInAction(()=>{this.props.store.displayedTracks = newDisplayedTracks});
     }
 
     playlistFilterChange = ({target: {value}}: any) => {
         LocalStorage.setString("filterString", value);
-        this.setState({filterString: value})
+        runInAction(()=>{this.props.store.filterString = value; })
         this.filterTracks(value);
     }
     //playlistFilterChange = debounce(this._playlistFilterChange, 500);
-
-    renderDeleteTrackIcon(trackInfo: TrackInfo) {
-        return (
-            <img src={trash_svg} title="Dbl-click to delete track"
-                onClick={ ()=> this.deleteTrack(trackInfo.id) }/>
-        );
-    }
-
-    renderNowPlay() {
-        const trackInfo = this.getCurrentTrack();
-        return (
-            <div className="nowPlay" onClick={()=>this.scrollToCurrentTrack()}>
-                {
-                    trackInfo
-                        ? <span className="npTitle">{this.getTrackLineName(trackInfo)}</span>
-                        : <span className="npTitle">-</span>
-                }
-                <div className="spacer"/>
-                <div className="playnow-buttons">
-                {trackInfo ? this.renderDeleteTrackIcon(trackInfo) : null}
-                </div>
-                {trackInfo ? this.renderRating(trackInfo) : null}
-            </div>
-        );
-    }
 
     onPlayerKey = (evt) => {
         console.log(evt.code, evt.key, evt);
@@ -600,9 +465,6 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         if (key == 'p') {
             this.playPause();
         }
-        if (key == 'o') {
-            this.props.showOptions();
-        }
         if (key == 'n') {
             this.nextTrack();
         }
@@ -611,7 +473,7 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         }
         for (let idx = 1; idx<=5; ++idx) {
             if (key == `${idx}`) {
-                const {currentTrackId} = this.state;
+                const {currentTrackId} = this.props.store;
                 if (currentTrackId) {
                     playerConn.setTrackRating({id: currentTrackId, rating: idx});
                 }
@@ -637,27 +499,43 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
         }
     }
 
-    changeMode(m: Mode) {
-        this.setState({mode: m});
-        LocalStorage.setString('mode', m);
-    }
-
     render() {
-        const {playing, filterString} = this.state;
-        const mode = this.getMode();
-        const modeBuilder = (m: Mode, icon: any) => {
-            return (
-                <Icon src={icon} className={classnames('btn', {active: mode == m}) } title={m} onClick={() =>this.changeMode(m) }/>
-            );
+        const player = this;
+        const playerCtrl: PlayerController = {
+            playTrackById: this.playTrackById,
+            showTrackInfo: this.showTrackInfo,
+            deleteTrack: this.deleteTrack,
+            nextTrack: this.nextTrack,
+            prevTrack: this.prevTrack,
+            shuffleAll: this.shuffleAll,
+            scrollToCurrentTrack: this.scrollToCurrentTrack,
+            play: this.play,
+            pause: this.pause,
+            showOptions: () => {this.props.store.optionsOpened = true},
+            setVolume: (vol) => this.setVolume,
         }
         return (
+        <PlayerControllerCtx.Provider value={playerCtrl}>
         <div onKeyDown={this.onPlayerKey} className="player">
-                {this.renderPlaylist()}
+                <Observer>
+                    {
+                        () => {
+                            const store = React.useContext(PlayerCtx);
+                            return store.optionsOpened
+                                ? <PlayerOptions/>
+                                : <Playlist 
+                                    playlistRef={this.playlistRef}
+                                    playerCtrl={playerCtrl}
+                                />
+                        }
+                    }
+                </Observer>
                 <div className="player-footer">
-                    {this.renderNowPlay()}
+                    <NowPlay/>
                     <div>
                         <Slider ref={this.sliderTrackRef} onValue={this.onTrackSeek}/>
                     </div>
+
                     <div className="audio0">
                         <audio ref={this.audioRef} preload="metadata" id="audio1" controls={true} 
                             onPlay={this.onAudioPlay}
@@ -669,26 +547,15 @@ export class Player extends React.Component<PlayerProps, PlayerState> {
                             Your browser does not support HTML5 Audio!
                         </audio>
                     </div>
-                    <div className="playControls">
-                        { !playing
-                            ?  <Icon src={play_svg} onClick={this.play}/>
-                            : <Icon src={pause_svg} onClick={this.pause}/>
-                        }
-                        <Icon src={prev_svg} onClick={this.prevTrack}/>
-                        <Icon src={next_svg} onClick={this.nextTrack}/>
-                        <Icon src={random_svg} onClick={this.shuffleAll}/>
-                        <Icon src={bolt_svg} onClick={this.props.showOptions}/>
-                        {modeBuilder(Mode.STANDALONE, child_svg)}
-                        {modeBuilder(Mode.MASTER, bullhorn_svg)}
-                        {modeBuilder(Mode.SLAVE, wifi_svg)}
-                        <div className="filterGroup">
-                          <input onChange={this.playlistFilterChange} onKeyDown={this.playlistFilterKeyDown} placeholder="filter..." value={filterString} />
-                        </div>
-                        <div className="spacer"/>
-                        <Slider className="volume_slider" ref={this.sliderVolumeRef} onValue={this.onVolume} />
-                    </div>
+                    <PlayControls
+                        sliderVolumeRef={this.sliderVolumeRef}
+                        playlistFilterChange={this.playlistFilterChange}
+                        playlistFilterKeyDown={this.playlistFilterKeyDown}
+                        playerCtrl={playerCtrl}
+                     />
                 </div>
         </div>
+        </PlayerControllerCtx.Provider>
         );
     }
 }

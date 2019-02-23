@@ -3,7 +3,7 @@ import { Component } from "react";
 import classnames = require('classnames');
 
 export interface SliderProps {
-    onValue?(val: number);
+    onValue?(val: number): void;
     className?: string;
 }
 export class Slider extends Component<SliderProps, any> {
@@ -13,7 +13,7 @@ export class Slider extends Component<SliderProps, any> {
         max: 1,
         val: 0,
     }
-    calcProc = (e)=> {
+    calcProc = (e: any)=> {
         const {max} = this.state;
         const brect = this.slider.getBoundingClientRect();
         return max * (e.clientX - brect.x) / brect.width;

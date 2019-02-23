@@ -3,8 +3,7 @@ import {render} from 'react-dom'
 
 import { App } from './app';
 
-
-render(<App/>, document.body)
+render(<App/>, document.getElementById("music-player-app"));
 
 var hot = module ? (module as any).hot: null;
 if (hot) {
