@@ -46,21 +46,23 @@ export const Playlist = observer((props: PlaylistProps) => {
             </div>
         )
     }
-    const list = ({ height, width }) => (
-        <List ref={props.playlistRef}
-            className="playlist"
-            autoHeight={false}
-            width={width}
-            height={height}
-            rowHeight={40}
-            rowCount={playlist.length}
-            rowRenderer={rowRenderer}
-        />
-    );
-
     return (
         <div className="playlist-container">
-            <AutoSizer children={list} />
+            <AutoSizer>
+                {
+                    ({ height, width }) => (
+                        <List ref={props.playlistRef}
+                            className="playlist"
+                            autoHeight={false}
+                            width={width}
+                            height={height}
+                            rowHeight={40}
+                            rowCount={playlist.length}
+                            rowRenderer={rowRenderer}
+                        />
+                    )
+                }
+            </AutoSizer>
         </div>
     );
 })
