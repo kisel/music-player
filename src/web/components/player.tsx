@@ -512,7 +512,7 @@ export class PlayerImpl extends React.Component<PlayerProps, {}> {
             play: this.play,
             pause: this.pause,
             showOptions: () => {this.props.store.optionsOpened = true},
-            setVolume: (vol) => this.setVolume,
+            setVolume: this.setVolume,
         }
         return (
         <PlayerControllerCtx.Provider value={playerCtrl}>
