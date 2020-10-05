@@ -153,7 +153,7 @@ export function trackInfoFromDb(dbTrackInfo: TrackInfo): TrackInfo {
 }
 
 export function trackDumpFromDb(dbTrackInfo: TrackInfo): TrackInfo {
-    let res = trackInfoFromDb(dbTrackInfo);
+    let res: any = trackInfoFromDb(dbTrackInfo);
     const extras: (keyof TrackInfo)[] = [
         'playStart', 'playSkip', 'playEnd', 'lastPlayed', 'deleted'
     ];
