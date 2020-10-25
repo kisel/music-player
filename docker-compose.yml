@@ -2,8 +2,8 @@ version: '3.1'
 
 services:
 
-  site:
-    container_name: music.akisel.ru
+  server:
+    container_name: music-player
     build: .
     restart: always
     ports:
