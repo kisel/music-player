@@ -1,6 +1,4 @@
-import * as yaml from 'js-yaml';
-
-// TODO: move to external yaml cfg file
+// TODO: move to external cfg file or env vars
 interface Config {
     media_library: string[];
 }
