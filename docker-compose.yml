@@ -4,15 +4,13 @@ services:
 
   site:
     container_name: music.akisel.ru
-    image: node:10
-    #network_mode: bridge
+    build: .
     restart: always
-    command: bash -c "npm i && npm run dev"
     ports:
       - 5555:5555
-    working_dir: /ws
+    environment:
+      - DATABASE=/db/database.sqlite
     volumes:
-      - ./:/ws
-      - /ws/node_modules
+      - ./data:/db
       - /data/media/music:/data/media/music
 

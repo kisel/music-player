@@ -87,7 +87,41 @@ if (!devMode) {
   );
 }
 
+function skipProdNodeModules() {
+     let res = JSON.parse(require('fs').readFileSync('package.json')).dependencies;
+     Object.keys(res).map(k => {
+         res[k] = `commonjs2 ${k}`
+     });
+     return res;
+}
+
+const backend = {
+     entry: [
+         './src/server/server.ts'
+     ],
+     output: {
+        filename: 'app/server.js'
+     },
+     module: {
+         rules: [
+             {
+                 test: /\.ts$/,
+                 loader: 'ts-loader',
+                 exclude: /node_modules/,
+             },
+         ]
+     },
+     resolve: {
+         extensions: [".js", ".ts"],
+     },
+
+     target: 'node',
+     externals: skipProdNodeModules()
+};
+
+
 module.exports = [
-  frontend
+  frontend,
+  backend,
 ]
 

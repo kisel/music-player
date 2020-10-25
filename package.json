@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && webpack --mode=production",
+    "build": "webpack --mode=production",
     "dev": "/usr/bin/env WEBPACK_PORT=5555 PORT=6161 ./node_modules/.bin/concurrently --raw npm:web-dev npm:server-dev",
     "web-dev-w": "webpack --watch --mode=development",
     "web-dev": "node scripts/webpack-dev-server.js",
@@ -13,6 +13,7 @@
     "migrate": "node -r ts-node/register src/server/tasks/migrate.ts",
     "backup": "cp -v data/database.sqlite data/database-$(date +%F).sqlite",
     "server-dev": "nodemon -w 'src/server/**/*.*' ./node_modules/.bin/ts-node src/server/server.ts",
+    "server": "node -r ts-node/register src/server/server.ts",
     "test": "/usr/bin/env DATABASE=:memory: ./node_modules/.bin/mocha test/**/*.spec.ts"
   },
   "author": "",
@@ -75,7 +76,7 @@
     "sequelize": "^4.44.4",
     "sequelize-typescript": "^0.6.11",
     "socket.io": "^2.3.0",
-    "sqlite3": "^4.0.2",
+    "sqlite3": "^5.0.0",
     "windows-1251": "^1.0.0"
   }
 }
