@@ -5,12 +5,18 @@ import { ApiEvents, PlayerAPI, TrackJournalEvtType, SearchExpression, ClientAPI 
 import { Tracks, SearchHistory } from './database';
 import { initializeDatabase, trackInfoFromDb, trackDumpFromDb, rescanLibrary } from './find_tracks';
 import { TrackInfo } from '../common/track';
+import { getUrlFromPath, getConfig } from './config'
 import * as Sequelize from 'sequelize';
 
 const app = express();
 const port = parseInt(process.env.PORT || '5555');
 
 app.use(express.static('public'));
+for (const media_path of getConfig().media_library) {
+    const mountpoint = getUrlFromPath(media_path);
+    app.use(mountpoint, express.static(media_path));
+    console.log(`mount ${mountpoint} => ${media_path}`)
+}
 
 const server = require('http').Server(app);
 export const io = socketio(server);

@@ -1,3 +1,5 @@
+import path = require('path')
+
 // TODO: move to external cfg file or env vars
 interface Config {
     media_library: string[];
@@ -9,10 +11,13 @@ const config: Config = {
     ]
 }
 
+export const medialib_prefix = '/media/';
+
 export function getConfig() {
     return config;
 }
 
-export function getUrlFromPath(path: string) {
-    return path.replace('/data/media/', '/media/');
+export function getUrlFromPath(filepath: string) {
+    return path.join(medialib_prefix, filepath)
 }
+
