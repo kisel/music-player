@@ -35,7 +35,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Log into registry
-        run: echo "${{ secrets.DOCKER_AKISEL_RU_PASS }}" | docker login ghcr.io -u ${{ secrets.DOCKER_AKISEL_RU_USER }} --password-stdin
+        run: echo "${{ secrets.DOCKER_AKISEL_RU_PASS }}" | docker login docker.akisel.ru -u ${{ secrets.DOCKER_AKISEL_RU_USER }} --password-stdin
       - name: Push image
         run: |
           IMAGE_ID=docker.akisel.ru/music-player
