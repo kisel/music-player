@@ -1,4 +1,8 @@
-FROM --platform=$BUILDPLATFORM node as static_builder
+ARG BUILDPLATFORM
+
+FROM --platform=${BUILDPLATFORM:-linux/amd64} node:lts as static_builder
+WORKDIR /app
+COPY package.json package-lock.json ./
 RUN npm i
 COPY src ./src
 COPY assets ./assets
