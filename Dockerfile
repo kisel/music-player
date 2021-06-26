@@ -1,9 +1,8 @@
-FROM node:14-slim as builder1
+ARG BUILDPLATFORM
+
+FROM --platform=${BUILDPLATFORM:-linux/amd64} node:lts as static_builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm i --production
-
-FROM builder1 as builder_full
 RUN npm i
 COPY src ./src
 COPY assets ./assets
@@ -11,9 +10,17 @@ COPY ./webpack* tsconfig.json ./
 RUN npm run build
 CMD npm run server
 
+FROM node:alpine as node_modules_builder
+RUN apk add gcc make python2 musl-dev g++
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm i --production
 
-FROM builder1
-COPY --from=builder_full /app/public ./public
-COPY --from=builder_full /app/dist/app/server.js ./server.js
+FROM node:alpine
+WORKDIR /app
+COPY --from=node_modules_builder /app/node_modules ./node_modules
+COPY --from=static_builder /app/public ./public
+COPY --from=static_builder /app/dist/app/server.js ./server.js
 CMD node server.js
+
 
