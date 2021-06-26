@@ -1,17 +1,22 @@
-FROM node:alpine as common
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm i --production
-
-FROM common as builder_full
+FROM --platform=$BUILDPLATFORM node as static_builder
 RUN npm i
 COPY src ./src
 COPY assets ./assets
 COPY ./webpack* tsconfig.json ./
 RUN npm run build
+CMD npm run server
 
-FROM common
-COPY --from=builder_full /app/public ./public
-COPY --from=builder_full /app/dist/app/server.js ./server.js
+FROM node:alpine as node_modules_builder
+RUN apk add gcc make python2 musl-dev g++
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm i --production
+
+FROM node:alpine
+WORKDIR /app
+COPY --from=node_modules_builder /app/node_modules ./node_modules
+COPY --from=static_builder /app/public ./public
+COPY --from=static_builder /app/dist/app/server.js ./server.js
 CMD node server.js
+
 
