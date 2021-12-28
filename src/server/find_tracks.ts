@@ -67,9 +67,6 @@ export async function initializeDatabase() {
     await Tracks.sync();
     const count = await Tracks.count();
     console.log(`Tracks loaded: ${count}`);
-    if (count === 0) {
-        importTracks("data/tracks.json");
-    }
 }
 
 export function mmToTrack(path: string, meta: IAudioMetadata): TrackInfo {
