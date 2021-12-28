@@ -3,7 +3,7 @@ import React = require("react");
 import { Icon, play_svg, pause_svg, prev_svg, next_svg, random_svg, bolt_svg, child_svg, bullhorn_svg, wifi_svg } from "../icons";
 import { Mode, PlayerCtx } from "../appstore";
 import { Slider } from "./slider";
-import classnames = require("classnames");
+import classNames = require("classnames");
 import { PlayerController } from "./player_controller";
 import { LocalStorage } from "../local_storage";
 
@@ -27,7 +27,7 @@ export const PlayControls = observer((props: PlayControlsProps)=> {
         return (
             <Icon
                 src={icon}
-                className={classnames('btn', { active: mode == m })}
+                className={classNames('btn', { active: mode == m })}
                 title={m}
                 onClick={() => changeMode(m)}
             />

@@ -3,12 +3,12 @@ import { playerConn } from '../api';
 import { ScanOptions, ScanResults } from '../../common/api_calls';
 import { useContext } from 'react';
 
-import { observer, useObservable, useObserver } from "mobx-react-lite"
+import { observer, useObserver } from "mobx-react-lite"
 import { PlayerCtx } from '../appstore';
 
 export const PlayerOptions = observer( () => {
     const store = useContext(PlayerCtx);
-    const scanState = useObservable({
+    const scanState = useObserver({
         scanning: false,
         scanResults: null as ScanResults,
     });
