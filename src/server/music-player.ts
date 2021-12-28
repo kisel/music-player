@@ -1,4 +1,4 @@
-import program = require('commander');
+import { program } from 'commander';
 import { rescanLibrary } from "./find_tracks";
 import { migrateDB } from "./migrations";
 import { getConfig } from './config';

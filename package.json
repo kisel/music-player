@@ -27,8 +27,6 @@
     "@types/react-dom": "^17.0.11",
     "@types/react-virtualized": "^9.21.16",
     "@types/recursive-readdir": "^2.2.0",
-    "@types/socket.io": "^3.0.2",
-    "@types/socket.io-client": "^3.0.0",
     "@types/webpack": "^5.28.0",
     "chai": "^4.3.4",
     "classnames": "^2.3.1",
