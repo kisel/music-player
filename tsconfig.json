@@ -8,6 +8,7 @@
 	"module": "commonjs",
 	"noImplicitAny": false,
 	"removeComments": true,
+	"skipLibCheck": true,
 	"sourceMap": true,
 	"jsx": "react"
     },

@@ -1,14 +1,14 @@
 import * as React from 'react'
 import { playerConn } from '../api';
 import { ScanOptions, ScanResults } from '../../common/api_calls';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 
-import { observer, useObserver } from "mobx-react-lite"
+import { observer } from "mobx-react-lite"
 import { PlayerCtx } from '../appstore';
 
 export const PlayerOptions = observer( () => {
     const store = useContext(PlayerCtx);
-    const scanState = useObserver({
+    const [scanState, setScanState] = useState({
         scanning: false,
         scanResults: null as ScanResults,
     });
@@ -18,12 +18,10 @@ export const PlayerOptions = observer( () => {
     };
 
     const rescan = (opt: ScanOptions) => {
-        scanState.scanning = true;
-        scanState.scanResults = null;
+	setScanState({scanning: true, scanResults: null})
         playerConn.rescanLibrary(opt)
-            .then((res) => { scanState.scanResults = res } )
-            .catch(console.log)
-            .then(() => scanState.scanning = false)
+            .then((res) => setScanState({ scanning: false, scanResults: res }))
+            .catch(() => setScanState({ scanning: false, scanResults: null }))
     }
 
     const {scanning, scanResults} = scanState;

@@ -1,4 +1,4 @@
-import * as Sequelize from 'sequelize';
+import { Sequelize } from 'sequelize';
 import { TrackInfo } from '../common/track';
 import { SearchExpression, ConfigRecord } from '../common/api_calls';
 
