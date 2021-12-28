@@ -4,12 +4,12 @@ name: CI
   
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branches
   push:
-    branches: [ master ]
+    branches: [ master, develop ]
     tags: [ v* ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, develop ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           image: tonistiigi/binfmt:latest
-          platforms: amd64,arm,arm64
+          platforms: amd64,arm64
       -
         name: Set up Docker Buildx
         id: buildx
@@ -45,6 +45,7 @@ jobs:
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
           # Use Docker `latest` tag convention
           [ "$VERSION" == "master" ] && VERSION=latest
+          [ "$VERSION" == "develop" ] && VERSION=develop
           echo "Building image: $IMAGE_ID:$VERSION"
-          docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push --cache-to=$IMAGE_ID:cache --cache-from=$IMAGE_ID:cache -t $IMAGE_ID:$VERSION .
+          docker buildx build --platform linux/amd64,linux/arm64 --push --cache-to=$IMAGE_ID:cache --cache-from=$IMAGE_ID:cache -t $IMAGE_ID:$VERSION .
 
