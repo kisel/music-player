@@ -25,17 +25,21 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   deleted: Sequelize.DATE,
 }, {
     charset: 'utf8',
-    collate: 'utf8_unicode_ci'
+    underscored: true
 });
 
 export const SearchHistory = sequelize.define<SearchExpression, any>('search_history', {
   expression: { type: Sequelize.STRING, unique: true },
 }, {
     charset: 'utf8',
-    collate: 'utf8_unicode_ci'
+    underscored: true
 });
 
 export const ConfigStorage = sequelize.define<ConfigRecord, any>('config', {
   key: { type: Sequelize.STRING, unique: true, primaryKey: true },
   data: Sequelize.JSON,
+}, {
+    charset: 'utf8',
+    underscored: true
 });
+
