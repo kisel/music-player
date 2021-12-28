@@ -9,7 +9,7 @@ services:
     ports:
       - 5555:5555
     environment:
-      - DATABASE=/db/database.sqlite
+      - DATABASE_URL=sqlite:/db/database.sqlite
     volumes:
       - ./data:/db
       - /data/media/music:/data/media/music

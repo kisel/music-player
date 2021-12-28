@@ -2,33 +2,12 @@ import * as Sequelize from 'sequelize';
 import { TrackInfo } from '../common/track';
 import { SearchExpression, ConfigRecord } from '../common/api_calls';
 
-export function getDatabaseStorage() {
-  return process.env['DATABASE'] || 'data/database.sqlite';
+if (!process.env.DATABASE_URL) {
+    console.log("DATABASE_URL not set");
+    process.exit(1);
 }
 
-export const sequelize = new Sequelize('music', 'music', 'music', {
-    dialect: 'sqlite',
-    operatorsAliases: Sequelize.Op, // use Sequelize.Op
-
-    //logging: false,
-
-    pool: {
-      max: 5,
-      min: 0,
-      idle: 10000
-    },
-
-  define: {
-    charset: 'utf8',
-    dialectOptions: {
-      collate: 'utf8_general_ci'
-    },
-    timestamps: true
-  } as any,
-
-    // SQLite only
-    storage: getDatabaseStorage()
-  }as any);
+export const sequelize = new Sequelize(process.env.DATABASE_URL);
   
 export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   artist: Sequelize.STRING,
