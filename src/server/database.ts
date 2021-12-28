@@ -9,6 +9,7 @@ if (!process.env.DATABASE_URL) {
 
 export const sequelize = new Sequelize(process.env.DATABASE_URL);
   
+// TODO: use upgrade to sequelize@6 or use field for snake case column names required for pg
 export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   artist: Sequelize.STRING,
   title: Sequelize.STRING,
@@ -17,10 +18,10 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   duration: Sequelize.INTEGER,
   path: { type: Sequelize.STRING, unique: true },
   meta: Sequelize.JSON,
-  playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  lastPlayed: Sequelize.DATE,
+  playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_start' },
+  playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_skip' },
+  playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_end' },
+  lastPlayed: { type: Sequelize.DATE, field: 'last_played'},
   mtime: Sequelize.DATE,
   deleted: Sequelize.DATE,
 }, {
