@@ -1,5 +1,4 @@
-// TODO: replace with pure websocket rpc
-import * as io from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { resolve } from 'url';
 import { ApiEvents, PlayerAPI, TrackJournalEvtType, ClientAPI} from '../common/api_calls';
 import { TrackInfo } from '../common/track';

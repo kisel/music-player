@@ -2,8 +2,9 @@
     "compilerOptions": {
 	"esModuleInterop": true,
 	"experimentalDecorators": true,
+	"emitDecoratorMetadata": true,
 	"outDir": "./app",
-	"target": "es2017",
+	"target": "es6",
 	"moduleResolution": "node",
 	"module": "commonjs",
 	"noImplicitAny": false,
