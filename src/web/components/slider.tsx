@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Component } from "react";
-import classnames = require('classnames');
+import classNames = require('classnames');
 
 export interface SliderProps {
     onValue?(val: number): void;
@@ -40,7 +40,7 @@ export class Slider extends Component<SliderProps, any> {
         const {max, val} = this.state;
         const p = '' + 100 * (val / (max || 1)) + '%'
         return (
-            <div ref={this.sliderRef} className={classnames(this.props.className, "slider")} onMouseUp={this.onMouseUp} onMouseMove={this.onMove} onMouseDown={this.onMouseDown}>
+            <div ref={this.sliderRef} className={classNames(this.props.className, "slider")} onMouseUp={this.onMouseUp} onMouseMove={this.onMove} onMouseDown={this.onMouseDown}>
                 <div className="slider_back">
                     <div className="slider_amount" style={{width: p}}/>
                 </div>

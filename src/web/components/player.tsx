@@ -10,7 +10,7 @@ import _ = require('lodash');
 import {LocalStorage} from "../local_storage";
 import { List, AutoSizer } from 'react-virtualized'
 //const { Column, Table, List } = require('react-virtualized')
-import * as classnames from 'classnames';
+import * as classNames from 'classnames';
 import { dumbAttribFilter } from "../../utils/filters";
 import { Slider } from './slider';
 import { PlayerOptions } from './options';

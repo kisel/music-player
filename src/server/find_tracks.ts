@@ -2,7 +2,7 @@ import { TrackInfo } from './../common/track';
 import {sequelize, Tracks} from './database'
 import * as fs from 'fs';
 import * as mm from 'music-metadata';
-import * as readdir from 'recursive-readdir'
+import readdir = require('recursive-readdir');
 import * as util from 'util'
 import { IAudioMetadata } from 'music-metadata/lib/type';
 import { getConfig, getUrlFromPath } from './config';

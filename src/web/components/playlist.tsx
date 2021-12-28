@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useContext } from "react";
 import { PlayerCtx } from "../appstore";
 import React = require("react");
-import classnames = require("classnames");
+import classNames = require("classnames");
 import { info_svg, trash_svg } from "../icons";
 import { formatDuration, getTrackFilename } from "./format";
 import { List, AutoSizer } from "react-virtualized";
@@ -24,7 +24,7 @@ export const Playlist = observer((props: PlaylistProps) => {
         const trackInfo = playlist[index];
         const { artist, title, duration, id } = trackInfo;
         return (
-            <div key={key} style={style} className={classnames("playlist-track", { "playing": id == currentTrackId })}>
+            <div key={key} style={style} className={classNames("playlist-track", { "playing": id == currentTrackId })}>
                 <div className="track-info" onClick={() => playerCtrl.playTrackById(id)}>
                     <div className="artist">
                         {artist || "Unknown"}

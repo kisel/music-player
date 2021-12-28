@@ -1,27 +1,29 @@
 {
-	"compilerOptions": {
-        "experimentalDecorators": true,
-		"outDir": "./app",
-		"target": "es6",
-		"moduleResolution": "node",
-		"module": "commonjs",
-		"noImplicitAny": false,
-		"removeComments": true,
-		"sourceMap": true,
-		"jsx": "react"
-	},
-	"suppressImplicitAnyIndexErrors": true,
-	"noImplicitThis": true,
-	"lib": [
-		"dom",
-		"es2015"
-	],
-	"baseUrl": ".",
-	"include": [
-            "src/**/*"
-        ],
-	"exclude": [
-            "dist",
-            "node_modules"
-	]
+    "compilerOptions": {
+	"esModuleInterop": true,
+	"experimentalDecorators": true,
+	"emitDecoratorMetadata": true,
+	"outDir": "./app",
+	"target": "es6",
+	"moduleResolution": "node",
+	"module": "commonjs",
+	"noImplicitAny": false,
+	"removeComments": true,
+	"skipLibCheck": true,
+	"sourceMap": true,
+	"jsx": "react"
+    },
+    "suppressImplicitAnyIndexErrors": true,
+    "noImplicitThis": true,
+    "lib": [
+	"dom",
+	"es2015"
+    ],
+    "baseUrl": ".",
+    "include": [
+	"src/**/*"
+    ],
+    "exclude": [
+	"dist"
+    ]
 }
