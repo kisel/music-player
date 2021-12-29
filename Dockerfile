@@ -1,6 +1,6 @@
 ARG BUILDPLATFORM
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} node:lts as static_builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} node:14 as static_builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm i
@@ -10,13 +10,13 @@ COPY ./webpack* tsconfig.json ./
 RUN npm run build
 CMD npm run server
 
-FROM node:alpine as node_modules_builder
+FROM node:16.3.0-alpine as node_modules_builder
 RUN apk add gcc make python2 musl-dev g++
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm i --production
 
-FROM node:alpine
+FROM node:16.3.0-alpine
 WORKDIR /app
 COPY --from=node_modules_builder /app/node_modules ./node_modules
 COPY --from=static_builder /app/public ./public

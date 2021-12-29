@@ -2,34 +2,14 @@ import * as Sequelize from 'sequelize';
 import { TrackInfo } from '../common/track';
 import { SearchExpression, ConfigRecord } from '../common/api_calls';
 
-export function getDatabaseStorage() {
-  return process.env['DATABASE'] || 'data/database.sqlite';
+if (!process.env.DATABASE_URL) {
+    console.log("DATABASE_URL not set");
+    process.exit(1);
 }
 
-export const sequelize = new Sequelize('music', 'music', 'music', {
-    dialect: 'sqlite',
-    operatorsAliases: Sequelize.Op, // use Sequelize.Op
-
-    //logging: false,
-
-    pool: {
-      max: 5,
-      min: 0,
-      idle: 10000
-    },
-
-  define: {
-    charset: 'utf8',
-    dialectOptions: {
-      collate: 'utf8_general_ci'
-    },
-    timestamps: true
-  } as any,
-
-    // SQLite only
-    storage: getDatabaseStorage()
-  }as any);
+export const sequelize = new Sequelize(process.env.DATABASE_URL);
   
+// TODO: use upgrade to sequelize@6 or use field for snake case column names required for pg
 export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   artist: Sequelize.STRING,
   title: Sequelize.STRING,
@@ -38,25 +18,29 @@ export const Tracks = sequelize.define<TrackInfo, any>('tracks', {
   duration: Sequelize.INTEGER,
   path: { type: Sequelize.STRING, unique: true },
   meta: Sequelize.JSON,
-  playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-  lastPlayed: Sequelize.DATE,
+  playStart: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_start' },
+  playSkip: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_skip' },
+  playEnd: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0, field: 'play_end' },
+  lastPlayed: { type: Sequelize.DATE, field: 'last_played'},
   mtime: Sequelize.DATE,
   deleted: Sequelize.DATE,
 }, {
     charset: 'utf8',
-    collate: 'utf8_unicode_ci'
+    underscored: true
 });
 
 export const SearchHistory = sequelize.define<SearchExpression, any>('search_history', {
   expression: { type: Sequelize.STRING, unique: true },
 }, {
     charset: 'utf8',
-    collate: 'utf8_unicode_ci'
+    underscored: true
 });
 
 export const ConfigStorage = sequelize.define<ConfigRecord, any>('config', {
   key: { type: Sequelize.STRING, unique: true, primaryKey: true },
   data: Sequelize.JSON,
+}, {
+    charset: 'utf8',
+    underscored: true
 });
+

@@ -1,6 +1,6 @@
 {
   "name": "music-player",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "backup": "cp -v data/database.sqlite data/database-$(date +%F).sqlite",
     "server-dev": "nodemon -w 'src/server/**/*.*' ./node_modules/.bin/ts-node src/server/server.ts",
     "server": "node -r ts-node/register src/server/server.ts",
-    "test": "/usr/bin/env DATABASE=:memory: ./node_modules/.bin/mocha test/**/*.spec.ts"
+    "test": "/usr/bin/env DATABASE_URL=sqlite::memory: ./node_modules/.bin/mocha test/**/*.spec.ts"
   },
   "author": "",
   "license": "MIT",
@@ -69,6 +69,8 @@
     "commander": "^2.20.3",
     "express": "^4.17.1",
     "music-metadata": "^3.8.0",
+    "pg": "^8.7.1",
+    "pg-hstore": "^2.3.4",
     "recursive-readdir": "^2.2.2",
     "sequelize": "^4.44.4",
     "socket.io": "^2.3.0",
