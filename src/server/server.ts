@@ -40,9 +40,15 @@ const api_handlers: PlayerAPI = {
     },
 
     trackJournal: async ({id, evt}) => {
-        const track_upd = (key: keyof TrackInfo, extraChanges = {}) => {
-            return Tracks.update( {
-                [key]: Sequelize.literal(`${key} + 1`), ...extraChanges
+        const track_upd = async (key: keyof TrackInfo, extraChanges = {}) => {
+	    // TODO: replace with increment
+	    const track = await Tracks.findById(id).catch(() => null);
+            if (track === null) {
+                return;
+            }
+            await Tracks.update( {
+                [key]: (track[key] || 0) + 1,
+                ...extraChanges
                 }, { where: {id} }
             );
         };
