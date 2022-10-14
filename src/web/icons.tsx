@@ -2,6 +2,7 @@ import React = require("react");
 
 export const trash_svg = require("@fortawesome/fontawesome-free/svgs/solid/trash.svg")
 export const info_svg = require("@fortawesome/fontawesome-free/svgs/solid/info.svg")
+export const download_svg = require("@fortawesome/fontawesome-free/svgs/solid/download.svg")
 export const bolt_svg = require("@fortawesome/fontawesome-free/svgs/solid/bolt.svg")
 
 export const play_svg = require("@fortawesome/fontawesome-free/svgs/solid/play.svg")

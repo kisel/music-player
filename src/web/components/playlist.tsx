@@ -3,7 +3,7 @@ import { useContext } from "react";
 import { PlayerCtx } from "../appstore";
 import React = require("react");
 import classnames = require("classnames");
-import { info_svg, trash_svg } from "../icons";
+import { download_svg, info_svg, trash_svg } from "../icons";
 import { formatDuration, getTrackFilename } from "./format";
 import { List, AutoSizer } from "react-virtualized";
 import { toJS } from "mobx";
@@ -34,6 +34,7 @@ export const Playlist = observer((props: PlaylistProps) => {
                     </div>
                 </div>
                 <div className="track-buttons">
+                    <a download href={trackInfo.url}> <img src={download_svg} /></a>
                     <img src={info_svg} onClick={() => playerCtrl.showTrackInfo(id)} />
                     <img src={trash_svg} onClick={() => playerCtrl.deleteTrack(id)} />
                 </div>
